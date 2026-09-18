@@ -1,0 +1,10 @@
+{
+  "KANBAN": {
+    "TITLE": "Kanban",
+    "UNASSIGNED_COLUMN": "Unassigned",
+    "NO_LIST_ATTRIBUTE": "Create a contact custom attribute of type \"List\" to use as the Kanban stages (e.g. New, In progress, Closed).",
+    "GO_TO_SETTINGS": "Go to Custom Attributes settings",
+    "FETCH_CONTACTS_ERROR": "Could not load contacts for the Kanban board.",
+    "UPDATE_CONTACT_ERROR": "Could not move the contact. Please try again."
+  }
+}
