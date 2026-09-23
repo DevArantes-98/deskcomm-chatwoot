@@ -7,8 +7,8 @@ module ConversationLinksConcern
     @links_count = @conversation.messages_with_links.count
     @messages = @conversation.messages_with_links
                              .includes(:inbox, sender: { avatar_attachment: :blob })
-                             .order(created_at: :desc)
+                             .reorder(created_at: :desc)
                              .page(attachment_params[:page])
-                             .per(ATTACHMENT_RESULTS_PER_PAGE)
+                             .per(self.class::ATTACHMENT_RESULTS_PER_PAGE)
   end
 end
