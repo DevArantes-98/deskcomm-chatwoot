@@ -665,5 +665,53 @@
     "AVG_REPLY_TIME": "Tempo Médio de Espera do Cliente",
     "RESOLUTION_COUNT": "Contagem de Resolução",
     "CONVERSATIONS": "Nº de Conversas"
+  },
+  "CS_DASHBOARD": {
+    "TITLE": "Painel CS",
+    "DESCRIPTION": "Tempo de resposta, volume de conversas, motivos de fechamento e clientes que sumiram.",
+    "RANGE": "Últimos {days} dias",
+    "GROUP_BY": {
+      "DAY": "Por dia",
+      "WEEK": "Por semana",
+      "MONTH": "Por mês"
+    },
+    "ALL_INBOXES": "Todas as caixas",
+    "LOADING": "Carregando painel...",
+    "ERROR": "Não foi possível carregar o painel. Tente novamente.",
+    "KPI": {
+      "AVG_REPLY_TIME": "Tempo médio de resposta",
+      "FIRST_RESPONSE": "Média da 1ª resposta",
+      "CREATED": "Conversas iniciadas",
+      "RESOLVED": "Conversas resolvidas",
+      "DORMANT": "Sem contato há {days}+ dias"
+    },
+    "VOLUME": {
+      "TITLE": "Volume no período",
+      "CREATED": "Iniciadas",
+      "RESOLVED": "Resolvidas"
+    },
+    "REASONS": {
+      "TITLE": "Motivos de fechamento",
+      "EMPTY": "Nenhuma conversa foi resolvida neste período.",
+      "NO_REASON": "Sem motivo informado"
+    },
+    "MANAGERS": {
+      "TITLE": "Tempo de resposta por gestor de conta",
+      "EMPTY": "Nenhuma resposta registrada neste período.",
+      "MANAGER": "Gestor de conta",
+      "REPLY_TIME": "Tempo de resposta",
+      "FIRST_RESPONSE": "1ª resposta",
+      "CONVERSATIONS": "Conversas",
+      "NO_MANAGER": "Sem gestor"
+    },
+    "DORMANT": {
+      "TITLE": "Clientes sem contato há mais de {days} dias",
+      "SHOWING": "Mostrando {shown} de {total}, os que sumiram há menos tempo primeiro.",
+      "EMPTY": "Todos os clientes falaram com você recentemente.",
+      "CUSTOMER": "Cliente",
+      "PHONE": "Telefone",
+      "SILENT_FOR": "Sem contato há",
+      "DAYS": "{count} dias"
+    }
   }
 }

@@ -203,6 +203,7 @@ Rails.application.routes.draw do
           end
 
           resources :whatsapp_groups, only: [:create]
+          resource :cs_dashboard, only: [:show], controller: 'cs_dashboard'
 
           resources :search, only: [:index] do
             collection do

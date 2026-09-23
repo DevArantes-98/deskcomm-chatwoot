@@ -23,6 +23,7 @@ import CsatResponses from './CsatResponses.vue';
 import BotReports from './BotReports.vue';
 import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
+import CsDashboard from './CsDashboard.vue';
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -125,6 +126,12 @@ export default {
           name: 'account_overview_reports',
           meta,
           component: LiveReports,
+        },
+        {
+          path: 'cs-dashboard',
+          name: 'cs_dashboard_reports',
+          meta,
+          component: CsDashboard,
         },
         {
           path: 'conversation',

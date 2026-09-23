@@ -371,6 +371,7 @@
     "ONGOING": "Em andamento",
     "ONE_OFF": "Única",
     "REPORTS_SLA": "SLA",
+    "REPORTS_CS_DASHBOARD": "Painel CS",
     "REPORTS_BOT": "Robôs",
     "REPORTS_AGENT": "Agentes",
     "REPORTS_LABEL": "Etiquetas",

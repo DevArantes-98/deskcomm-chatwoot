@@ -687,6 +687,11 @@ const menuItems = computed(() => {
           to: accountScopedRoute('account_overview_reports'),
         },
         {
+          name: 'Report CS Dashboard',
+          label: t('SIDEBAR.REPORTS_CS_DASHBOARD'),
+          to: accountScopedRoute('cs_dashboard_reports'),
+        },
+        {
           name: 'Report Conversation',
           label: t('SIDEBAR.REPORTS_CONVERSATION'),
           to: accountScopedRoute('conversation_reports'),
