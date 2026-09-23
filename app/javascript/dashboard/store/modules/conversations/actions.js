@@ -128,6 +128,25 @@ const actions = {
     }
   },
 
+  fetchAllLinks: async ({ commit }, conversationId) => {
+    let links = [];
+
+    try {
+      const { data } = await ConversationApi.getLinks(conversationId);
+      links = data.payload;
+    } catch (error) {
+      Sentry.setContext('Conversation', {
+        id: conversationId,
+      });
+      Sentry.captureException(error);
+    } finally {
+      commit(types.SET_ALL_LINKS, {
+        id: conversationId,
+        data: links,
+      });
+    }
+  },
+
   syncActiveConversationMessages: async (
     { commit, state, dispatch },
     { conversationId }

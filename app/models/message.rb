@@ -140,6 +140,18 @@ class Message < ApplicationRecord
   after_update_commit :dispatch_update_event
   after_commit :reindex_for_search, if: :should_index?, on: [:create, :update]
 
+  URL_REGEXP = URI::DEFAULT_PARSER.make_regexp(%w[http https]).freeze
+
+  # Public: URLs found in a message body, in the order they appear.
+  # Used to power the conversation "Links" panel.
+  def self.extract_urls(content)
+    return [] if content.blank?
+
+    urls = []
+    content.scan(URL_REGEXP) { urls << Regexp.last_match(0) }
+    urls
+  end
+
   def channel_token
     @token ||= inbox.channel.try(:page_access_token)
   end

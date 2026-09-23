@@ -475,11 +475,18 @@
       "DOWNLOAD_ERROR": "Could not download the file. Please try again.",
       "MEDIA_HEADING": "Media",
       "FILES_HEADING": "Files",
+      "LINKS_HEADING": "Links",
       "VIEW_ALL": "View all",
       "SHOW_LESS": "Show less",
       "MORE_COUNT": "+{count}",
       "UNTITLED_FILE": "Untitled file",
-      "JUMP_TO_MESSAGE": "Jump to message"
+      "JUMP_TO_MESSAGE": "Jump to message",
+      "COPY_LINK": "Copy link",
+      "LINK_COPIED": "Link copied to clipboard",
+      "COPY_LINK_ERROR": "Could not copy the link. Please try again.",
+      "OPEN_LINK": "Open link",
+      "SEARCH_PLACEHOLDER": "Search files and links",
+      "SEARCH_EMPTY": "Nothing found for \"{query}\""
     },
     "SHOPIFY": {
       "ORDER_ID": "Order #{id}",

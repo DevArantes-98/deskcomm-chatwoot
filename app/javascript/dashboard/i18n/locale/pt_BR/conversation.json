@@ -437,11 +437,18 @@
       "DOWNLOAD_ERROR": "Não foi possível baixar o arquivo. Por favor, tente novamente.",
       "MEDIA_HEADING": "Mídia",
       "FILES_HEADING": "Arquivos",
+      "LINKS_HEADING": "Links",
       "VIEW_ALL": "Visualizar tudo",
       "SHOW_LESS": "Mostrar menos",
       "MORE_COUNT": "+{count}",
       "UNTITLED_FILE": "Arquivo sem nome",
-      "JUMP_TO_MESSAGE": "Ir para mensagem"
+      "JUMP_TO_MESSAGE": "Ir para mensagem",
+      "COPY_LINK": "Copiar link",
+      "LINK_COPIED": "Link copiado",
+      "COPY_LINK_ERROR": "Não foi possível copiar o link. Tente novamente.",
+      "OPEN_LINK": "Abrir link",
+      "SEARCH_PLACEHOLDER": "Buscar arquivos e links",
+      "SEARCH_EMPTY": "Nada encontrado para \"{query}\""
     },
     "SHOPIFY": {
       "ORDER_ID": "Pedido #{id}",

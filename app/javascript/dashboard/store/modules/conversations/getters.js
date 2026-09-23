@@ -59,6 +59,11 @@ const getters = {
   },
   getSelectedChatAttachmentsLoaded: ({ selectedChatId, attachments }) =>
     selectedChatId !== null && attachments[selectedChatId] !== undefined,
+  getSelectedChatLinks: ({ selectedChatId, links }) => {
+    return links[selectedChatId] || [];
+  },
+  getSelectedChatLinksLoaded: ({ selectedChatId, links }) =>
+    selectedChatId !== null && links[selectedChatId] !== undefined,
   getChatListFilters: ({ conversationFilters }) => conversationFilters,
   getLastEmailInSelectedChat: (stage, _getters) => {
     const selectedChat = _getters.getSelectedChat;

@@ -11,6 +11,7 @@ import { CONTENT_TYPES } from 'dashboard/components-next/message/constants.js';
 const state = {
   allConversations: [],
   attachments: {},
+  links: {},
   listLoadingStatus: true,
   chatStatusFilter: wootConstants.STATUS_TYPE.OPEN,
   chatSortFilter: wootConstants.SORT_BY_TYPE.LATEST,
@@ -88,6 +89,9 @@ export const mutations = {
   },
   [types.SET_ALL_ATTACHMENTS](_state, { id, data }) {
     _state.attachments[id] = [...data];
+  },
+  [types.SET_ALL_LINKS](_state, { id, data }) {
+    _state.links[id] = [...data];
   },
   [types.SET_MISSING_MESSAGES](_state, { id, data }) {
     const [chat] = _state.allConversations.filter(c => c.id === id);
