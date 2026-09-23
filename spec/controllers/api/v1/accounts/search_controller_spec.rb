@@ -38,7 +38,7 @@ RSpec.describe 'Search', type: :request do
         response_data = JSON.parse(response.body, symbolize_names: true)
 
         expect(response_data[:payload][:messages].first[:content]).to eq 'test2'
-        expect(response_data[:payload].keys).to contain_exactly(:contacts, :conversations, :messages, :articles)
+        expect(response_data[:payload].keys).to contain_exactly(:contacts, :groups, :files, :conversations, :messages, :articles)
         expect(response_data[:payload][:messages].length).to eq 2
         expect(response_data[:payload][:conversations].length).to eq 1
         expect(response_data[:payload][:contacts].length).to eq 1
@@ -449,6 +449,72 @@ RSpec.describe 'Search', type: :request do
           expect(article_ids).not_to include(very_old_article.id, recent_article.id)
         end
       end
+    end
+  end
+
+  describe 'GET /api/v1/accounts/{account.id}/search/groups' do
+    let(:inbox) { create(:inbox, account: account) }
+    let!(:group) { create(:contact, name: 'Grupo Vendas', identifier: '120363111111111111@g.us', account: account) }
+
+    before do
+      create(:inbox_member, user: agent, inbox: inbox)
+      create(:conversation, account: account, inbox: inbox, contact: group)
+    end
+
+    it 'returns the matching group with the conversation to open' do
+      get "/api/v1/accounts/#{account.id}/search/groups",
+          headers: agent.create_new_auth_token,
+          params: { q: 'Vendas' },
+          as: :json
+
+      expect(response).to have_http_status(:success)
+      groups = response.parsed_body['payload']['groups']
+      expect(groups.length).to eq 1
+      expect(groups.first).to include('name' => 'Grupo Vendas', 'identifier' => group.identifier,
+                                      'conversation_id' => group.conversations.first.display_id)
+    end
+
+    it 'returns unauthorized without a session' do
+      get "/api/v1/accounts/#{account.id}/search/groups", params: { q: 'Vendas' }
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
+  describe 'GET /api/v1/accounts/{account.id}/search/files' do
+    let(:inbox) { create(:inbox, account: account) }
+    let(:conversation) { create(:conversation, account: account, inbox: inbox) }
+    let(:message) { create(:message, account: account, inbox: inbox, conversation: conversation) }
+
+    before do
+      create(:inbox_member, user: agent, inbox: inbox)
+      attachment = message.attachments.new(account: account, file_type: :file)
+      attachment.file.attach(io: StringIO.new('content'), filename: 'proposta_comercial.pdf', content_type: 'application/pdf')
+      attachment.save!
+    end
+
+    it 'returns files matching the file name with the message to open' do
+      get "/api/v1/accounts/#{account.id}/search/files",
+          headers: agent.create_new_auth_token,
+          params: { q: 'proposta' },
+          as: :json
+
+      expect(response).to have_http_status(:success)
+      files = response.parsed_body['payload']['files']
+      expect(files.length).to eq 1
+      expect(files.first).to include('filename' => 'proposta_comercial.pdf', 'file_type' => 'file', 'message_id' => message.id,
+                                     'conversation_id' => conversation.display_id)
+    end
+
+    it 'does not return files from inboxes the agent is not a member of' do
+      other_agent = create(:user, account: account, role: :agent)
+
+      get "/api/v1/accounts/#{account.id}/search/files",
+          headers: other_agent.create_new_auth_token,
+          params: { q: 'proposta' },
+          as: :json
+
+      expect(response.parsed_body['payload']['files']).to eq([])
     end
   end
 end
