@@ -373,6 +373,25 @@
         "unchanged": "The text is the same as before."
       }
     },
+    "SEND_CONTACT": {
+      "TOOLTIP": "Send a contact",
+      "TITLE": "Send a contact",
+      "DESCRIPTION": "The contact card is delivered on WhatsApp, so the customer can save it.",
+      "SEARCH_PLACEHOLDER": "Search by name or phone number",
+      "SEARCH_HINT": "Type at least 2 characters to search your contacts.",
+      "SEARCHING": "Searching...",
+      "NO_RESULTS": "No contacts with a phone number found.",
+      "SEND": "Send contact",
+      "CANCEL": "Cancel",
+      "SUCCESS": "Contact sent",
+      "ERRORS": {
+        "generic": "Could not send the contact. Please try again.",
+        "whatsapp_error": "WhatsApp did not accept the contact. Please try again.",
+        "inbox_not_supported": "Sending contacts is not enabled for this inbox.",
+        "no_chat_jid": "Could not determine the WhatsApp chat for this conversation.",
+        "contact_without_phone": "This contact has no phone number."
+      }
+    },
     "CONTEXT_MENU": {
       "COPY": "Copy",
       "EDIT": "Edit",

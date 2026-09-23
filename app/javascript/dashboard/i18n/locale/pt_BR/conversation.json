@@ -335,6 +335,25 @@
         "unchanged": "O texto é igual ao anterior."
       }
     },
+    "SEND_CONTACT": {
+      "TOOLTIP": "Enviar um contato",
+      "TITLE": "Enviar um contato",
+      "DESCRIPTION": "O cartão do contato é entregue no WhatsApp, e o cliente pode salvá-lo.",
+      "SEARCH_PLACEHOLDER": "Busque por nome ou telefone",
+      "SEARCH_HINT": "Digite pelo menos 2 caracteres para buscar nos seus contatos.",
+      "SEARCHING": "Buscando...",
+      "NO_RESULTS": "Nenhum contato com telefone encontrado.",
+      "SEND": "Enviar contato",
+      "CANCEL": "Cancelar",
+      "SUCCESS": "Contato enviado",
+      "ERRORS": {
+        "generic": "Não foi possível enviar o contato. Tente novamente.",
+        "whatsapp_error": "O WhatsApp não aceitou o contato. Tente novamente.",
+        "inbox_not_supported": "O envio de contatos não está habilitado para esta caixa de entrada.",
+        "no_chat_jid": "Não foi possível identificar o chat do WhatsApp desta conversa.",
+        "contact_without_phone": "Este contato não tem número de telefone."
+      }
+    },
     "CONTEXT_MENU": {
       "COPY": "Copiar",
       "EDIT": "Editar",

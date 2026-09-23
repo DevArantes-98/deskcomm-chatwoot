@@ -99,6 +99,12 @@ class MessageApi extends ApiClient {
     );
   }
 
+  sendContact(conversationID, contactId) {
+    return axios.post(`${this.url}/${conversationID}/shared_contacts`, {
+      contact_id: contactId,
+    });
+  }
+
   retry(conversationID, messageId) {
     return axios.post(
       `${this.url}/${conversationID}/messages/${messageId}/retry`

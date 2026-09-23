@@ -5,16 +5,6 @@
 # (Channel::Api#evolution_go_config) and WhatsApp is updated *first*: if it refuses, nothing changes here.
 class Messages::EditService
   EDIT_WINDOW = 15.minutes # WhatsApp only allows editing shortly after sending
-  WHATSAPP_ID_PREFIX = 'WAID:'.freeze
-
-  class NotEditable < StandardError
-    attr_reader :reason
-
-    def initialize(reason)
-      @reason = reason
-      super(reason.to_s)
-    end
-  end
 
   pattr_initialize [:message!, :content!, :user!]
 
@@ -31,7 +21,7 @@ class Messages::EditService
 
   def ensure_editable!
     reason = not_editable_reason
-    raise NotEditable, reason if reason
+    raise EvolutionGo::Refused, reason if reason
   end
 
   def not_editable_reason
@@ -50,7 +40,7 @@ class Messages::EditService
     return :forbidden unless message.sender == user || Current.account_user&.administrator?
     return :inbox_not_supported unless evolution_go_config
 
-    :no_source_id unless message.source_id.to_s.start_with?(WHATSAPP_ID_PREFIX)
+    :no_source_id unless EvolutionGo::WhatsappId.source_id?(message.source_id)
   end
 
   def content_reason
@@ -78,7 +68,7 @@ class Messages::EditService
     config = evolution_go_config
     EvolutionGo::Client.new(url: config['url'], token: config['token']).edit_message(
       chat: chat_jid,
-      message_id: message.source_id.delete_prefix(WHATSAPP_ID_PREFIX),
+      message_id: EvolutionGo::WhatsappId.from_source_id(message.source_id),
       text: new_content
     )
   end

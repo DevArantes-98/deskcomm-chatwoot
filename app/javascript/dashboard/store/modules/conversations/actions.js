@@ -393,6 +393,11 @@ const actions = {
     commit(types.ADD_MESSAGE, data);
   },
 
+  sendContactMessage: async ({ commit }, { conversationId, contactId }) => {
+    const { data } = await MessageApi.sendContact(conversationId, contactId);
+    commit(types.ADD_MESSAGE, data);
+  },
+
   deleteConversation: async ({ commit, dispatch }, conversationId) => {
     try {
       await ConversationApi.delete(conversationId);

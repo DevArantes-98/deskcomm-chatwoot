@@ -29,7 +29,7 @@ class WebhookListener < BaseListener
     return unless message.webhook_sendable?
 
     payload = message.webhook_data.merge(event: __method__.to_s)
-    deliver_webhook_payloads(payload, inbox)
+    deliver_message_payloads(message, payload, inbox)
   end
 
   def message_updated(event)
@@ -39,7 +39,7 @@ class WebhookListener < BaseListener
     return unless message.webhook_sendable?
 
     payload = message.webhook_data.merge(event: __method__.to_s)
-    deliver_webhook_payloads(payload, inbox)
+    deliver_message_payloads(message, payload, inbox)
   end
 
   def webwidget_triggered(event)
@@ -129,6 +129,15 @@ class WebhookListener < BaseListener
 
   def deliver_webhook_payloads(payload, inbox)
     deliver_account_webhooks(payload, inbox.account)
+    deliver_api_inbox_webhooks(payload, inbox)
+  end
+
+  # Messages Chatwoot already delivered to WhatsApp itself (Messages::SendContactService) must not
+  # reach the bridge inbox webhook, or the bridge would send them a second time.
+  def deliver_message_payloads(message, payload, inbox)
+    deliver_account_webhooks(payload, inbox.account)
+    return if message.content_attributes.to_h['delivered_by'] == 'evolution_go'
+
     deliver_api_inbox_webhooks(payload, inbox)
   end
 end

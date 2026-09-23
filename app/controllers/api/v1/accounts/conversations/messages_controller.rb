@@ -1,4 +1,6 @@
 class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::Conversations::BaseController
+  include EvolutionGoErrorHandling
+
   before_action :ensure_api_inbox, only: :update
 
   def index
@@ -8,10 +10,6 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   def edit
     @message = Messages::EditService.new(message: message, content: params[:content], user: Current.user).perform
     render :update
-  rescue Messages::EditService::NotEditable => e
-    render json: { error: e.message, code: e.reason }, status: :unprocessable_entity
-  rescue EvolutionGo::Error => e
-    render json: { error: e.message, code: :whatsapp_error }, status: :bad_gateway
   end
 
   def create
