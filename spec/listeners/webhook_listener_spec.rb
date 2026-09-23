@@ -126,6 +126,37 @@ describe WebhookListener do
     end
   end
 
+  describe 'messages Chatwoot already delivered through Evolution Go' do
+    let(:event_name) { :'message.created' }
+    let(:channel_api) { create(:channel_api, account: account) }
+    let(:delivered) do
+      api_conversation = create(:conversation, account: account, inbox: channel_api.inbox, assignee: user)
+      create(:message, message_type: 'outgoing', account: account, inbox: channel_api.inbox, conversation: api_conversation,
+                       content_attributes: { 'delivered_by' => 'evolution_go' })
+    end
+
+    it 'does not forward message events to the API inbox webhook, so the bridge cannot send them twice' do
+      expect(WebhookJob).not_to receive(:perform_later).with(channel_api.webhook_url, anything, :api_inbox_webhook, anything)
+
+      listener.message_created(Events::Base.new(:'message.created', Time.zone.now, message: delivered))
+      listener.message_updated(Events::Base.new(:'message.updated', Time.zone.now, message: delivered))
+    end
+
+    it 'still notifies account-level webhooks' do
+      webhook = create(:webhook, account: account, subscriptions: ['message_created'])
+      expect(WebhookJob).to receive(:perform_later).with(webhook.url, anything, :account_webhook, anything).once
+
+      listener.message_created(Events::Base.new(:'message.created', Time.zone.now, message: delivered))
+    end
+
+    it 'keeps forwarding regular messages to the API inbox webhook' do
+      regular = create(:message, message_type: 'outgoing', account: account, inbox: channel_api.inbox, conversation: delivered.conversation)
+      expect(WebhookJob).to receive(:perform_later).with(channel_api.webhook_url, anything, :api_inbox_webhook, anything).once
+
+      listener.message_created(Events::Base.new(:'message.created', Time.zone.now, message: regular))
+    end
+  end
+
   describe '#conversation_created' do
     let(:event_name) { :'conversation.created' }
 

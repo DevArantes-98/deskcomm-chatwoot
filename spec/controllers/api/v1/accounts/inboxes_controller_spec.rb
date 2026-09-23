@@ -1616,4 +1616,24 @@ RSpec.describe 'Inboxes API', type: :request do
       end
     end
   end
+
+  describe 'Evolution Go link in the inbox payload' do
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let(:channel) do
+      create(:channel_api, account: account,
+                           additional_attributes: { 'evolution_go' => { 'url' => 'https://evo.internal', 'token' => 'super-secret' } })
+    end
+
+    before { create(:inbox_member, user: agent, inbox: channel.inbox) }
+
+    it 'tells agents the link exists without exposing its url or token' do
+      get "/api/v1/accounts/#{account.id}/inboxes", headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      inbox = response.parsed_body['payload'].find { |item| item['id'] == channel.inbox.id }
+      expect(inbox['evolution_go_enabled']).to be true
+      expect(response.body).not_to include('super-secret')
+      expect(response.body).not_to include('evo.internal')
+    end
+  end
 end
