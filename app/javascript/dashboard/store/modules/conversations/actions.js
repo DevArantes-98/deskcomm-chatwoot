@@ -387,6 +387,12 @@ const actions = {
     }
   },
 
+  // Errors are re-thrown untouched so the caller can read the server's `code`.
+  editMessage: async ({ commit }, { conversationId, messageId, content }) => {
+    const { data } = await MessageApi.edit(conversationId, messageId, content);
+    commit(types.ADD_MESSAGE, data);
+  },
+
   deleteConversation: async ({ commit, dispatch }, conversationId) => {
     try {
       await ConversationApi.delete(conversationId);

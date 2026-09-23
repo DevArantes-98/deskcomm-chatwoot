@@ -349,8 +349,33 @@
       "REMOVE": "Remove",
       "ASSIGN": "Assign"
     },
+    "EDIT_MESSAGE": {
+      "TITLE": "Edit message",
+      "DESCRIPTION": "The customer will see the corrected text on WhatsApp, marked as edited.",
+      "PLACEHOLDER": "Type the corrected message",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "SUCCESS": "Message edited",
+      "EDITED": "edited",
+      "ERRORS": {
+        "generic": "Could not edit the message. Please try again.",
+        "whatsapp_error": "WhatsApp did not accept the edit. Please try again.",
+        "window_expired": "This message is too old to edit (WhatsApp allows editing for 15 minutes).",
+        "forbidden": "Only the person who sent this message (or an administrator) can edit it.",
+        "inbox_not_supported": "Editing is not enabled for this inbox.",
+        "no_source_id": "This message has no WhatsApp ID yet, so it cannot be edited.",
+        "no_chat_jid": "Could not determine the WhatsApp chat for this contact.",
+        "not_text": "Only text messages can be edited.",
+        "not_outgoing": "Only messages sent by your team can be edited.",
+        "private_note": "Private notes cannot be edited here.",
+        "deleted": "Deleted messages cannot be edited.",
+        "blank_content": "The message cannot be empty.",
+        "unchanged": "The text is the same as before."
+      }
+    },
     "CONTEXT_MENU": {
       "COPY": "Copy",
+      "EDIT": "Edit",
       "REPLY_TO": "Reply to this message",
       "DELETE": "Delete",
       "CREATE_A_CANNED_RESPONSE": "Add to canned responses",

@@ -5,6 +5,15 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     @messages = message_finder.perform
   end
 
+  def edit
+    @message = Messages::EditService.new(message: message, content: params[:content], user: Current.user).perform
+    render :update
+  rescue Messages::EditService::NotEditable => e
+    render json: { error: e.message, code: e.reason }, status: :unprocessable_entity
+  rescue EvolutionGo::Error => e
+    render json: { error: e.message, code: :whatsapp_error }, status: :bad_gateway
+  end
+
   def create
     user = Current.user || @resource
     mb = Messages::MessageBuilder.new(user, @conversation, params)

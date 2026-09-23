@@ -311,8 +311,33 @@
       "REMOVE": "Excluir",
       "ASSIGN": "Atribuir"
     },
+    "EDIT_MESSAGE": {
+      "TITLE": "Editar mensagem",
+      "DESCRIPTION": "O cliente verá o texto corrigido no WhatsApp, marcado como editado.",
+      "PLACEHOLDER": "Digite a mensagem corrigida",
+      "SAVE": "Salvar",
+      "CANCEL": "Cancelar",
+      "SUCCESS": "Mensagem editada",
+      "EDITED": "editada",
+      "ERRORS": {
+        "generic": "Não foi possível editar a mensagem. Tente novamente.",
+        "whatsapp_error": "O WhatsApp não aceitou a edição. Tente novamente.",
+        "window_expired": "Esta mensagem é antiga demais para editar (o WhatsApp permite editar por 15 minutos).",
+        "forbidden": "Só quem enviou esta mensagem (ou um administrador) pode editá-la.",
+        "inbox_not_supported": "A edição não está habilitada para este inbox.",
+        "no_source_id": "Esta mensagem ainda não tem ID do WhatsApp, então não pode ser editada.",
+        "no_chat_jid": "Não foi possível identificar o chat do WhatsApp deste contato.",
+        "not_text": "Só mensagens de texto podem ser editadas.",
+        "not_outgoing": "Só mensagens enviadas pela equipe podem ser editadas.",
+        "private_note": "Notas privadas não podem ser editadas aqui.",
+        "deleted": "Mensagens apagadas não podem ser editadas.",
+        "blank_content": "A mensagem não pode ficar vazia.",
+        "unchanged": "O texto é igual ao anterior."
+      }
+    },
     "CONTEXT_MENU": {
       "COPY": "Copiar",
+      "EDIT": "Editar",
       "REPLY_TO": "Responder mensagem",
       "DELETE": "Excluir",
       "CREATE_A_CANNED_RESPONSE": "Adicionar às respostas prontas",

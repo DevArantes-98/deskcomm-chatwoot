@@ -32,6 +32,8 @@ const {
   contentAttributes,
 } = useMessageContext();
 
+const isEdited = computed(() => !!contentAttributes.value?.edited);
+
 const readableTime = computed(() =>
   messageTimestamp(createdAt.value, 'LLL d, h:mm a')
 );
@@ -135,6 +137,9 @@ const statusToShow = computed(() => {
   <div class="text-xs flex items-center gap-1.5">
     <div class="inline">
       <time class="inline">{{ readableTime }}</time>
+      <span v-if="isEdited" class="ms-1 italic">
+        {{ `· ${$t('CONVERSATION.EDIT_MESSAGE.EDITED')}` }}
+      </span>
     </div>
     <Icon v-if="isPrivate" icon="i-lucide-lock-keyhole" class="size-3" />
     <MessageStatus v-if="showStatusIndicator" :status="statusToShow" />
