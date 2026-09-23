@@ -5,11 +5,19 @@ import { useI18n } from 'vue-i18n';
 import Button from 'dashboard/components-next/button/Button.vue';
 import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
 import { usePolicy } from 'dashboard/composables/usePolicy';
+import { useMapGetter } from 'dashboard/composables/store';
+import CreateWhatsappGroupModal from 'dashboard/components/widgets/CreateWhatsappGroupModal.vue';
 
 const emit = defineEmits(['add', 'import', 'export']);
 
 const { t } = useI18n();
 const { checkPermissions } = usePolicy();
+
+const inboxes = useMapGetter('inboxes/getInboxes');
+const canCreateGroup = computed(() =>
+  inboxes.value.some(inbox => inbox.evolution_go_enabled)
+);
+const showCreateGroup = ref(false);
 
 const contactMenuItems = computed(() => [
   {
@@ -18,6 +26,16 @@ const contactMenuItems = computed(() => [
     value: 'add',
     icon: 'i-lucide-plus',
   },
+  ...(canCreateGroup.value
+    ? [
+        {
+          label: t('CONVERSATION.WHATSAPP_GROUP.MENU_CREATE'),
+          action: 'createGroup',
+          value: 'createGroup',
+          icon: 'i-lucide-users',
+        },
+      ]
+    : []),
   ...(checkPermissions(['administrator', 'contact_manage'])
     ? [
         {
@@ -52,6 +70,9 @@ const handleContactAction = ({ action }) => {
     emit('import');
   } else if (action === 'export') {
     emit('export');
+  } else if (action === 'createGroup') {
+    showActionsDropdown.value = false;
+    showCreateGroup.value = true;
   }
 };
 </script>
@@ -69,8 +90,9 @@ const handleContactAction = ({ action }) => {
     <DropdownMenu
       v-if="showActionsDropdown"
       :menu-items="contactMenuItems"
-      class="ltr:right-0 rtl:left-0 mt-1 w-52 top-full"
+      class="ltr:right-0 rtl:left-0 mt-1 w-64 top-full"
       @action="handleContactAction($event)"
     />
+    <CreateWhatsappGroupModal v-model:show="showCreateGroup" />
   </div>
 </template>

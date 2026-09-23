@@ -13,6 +13,7 @@ import AccordionItem from 'dashboard/components/Accordion/AccordionItem.vue';
 import ContactConversations from './ContactConversations.vue';
 import ConversationAction from './ConversationAction.vue';
 import ConversationParticipant from './ConversationParticipant.vue';
+import GroupPanel from './GroupPanel.vue';
 import ContactInfo from './contact/ContactInfo.vue';
 import ContactNotes from './contact/ContactNotes.vue';
 import ConversationInfo from './ConversationInfo.vue';
@@ -96,6 +97,15 @@ const contactAdditionalAttributes = computed(
   () => contact.value.additional_attributes || {}
 );
 
+const inboxGetter = useMapGetter('inboxes/getInbox');
+const isWhatsappGroup = computed(() => {
+  const inbox = inboxGetter.value(props.inboxId);
+  return (
+    !!(inbox.evolution_go_enabled ?? inbox.evolutionGoEnabled) &&
+    String(contact.value.identifier || '').endsWith('@g.us')
+  );
+});
+
 const getContactDetails = () => {
   if (contactId.value) {
     store.dispatch('contacts/show', { id: contactId.value });
@@ -138,6 +148,15 @@ onMounted(() => {
       @close="closeContactPanel"
     />
     <ContactInfo :contact="contact" :channel-type="channelType" />
+    <div v-if="isWhatsappGroup" class="px-2 pb-3">
+      <AccordionItem
+        :title="$t('CONVERSATION.WHATSAPP_GROUP.TITLE')"
+        :is-open="isContactSidebarItemOpen('is_whatsapp_group_open')"
+        @toggle="value => toggleSidebarUIState('is_whatsapp_group_open', value)"
+      >
+        <GroupPanel :conversation-id="conversationId" />
+      </AccordionItem>
+    </div>
     <div class="px-2 pb-8 list-group">
       <Draggable
         :list="conversationSidebarItems"

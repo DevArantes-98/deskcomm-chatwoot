@@ -21,6 +21,25 @@ class EvolutionGo::Client
     sent_message_id(response)
   end
 
+  # Returns the raw whatsmeow GroupInfo (JID, GroupName, GroupTopic, Participants...).
+  def group_info(group_jid:)
+    post('/group/info', groupJid: group_jid)['data']
+  end
+
+  # `participants` are phone numbers (digits); returns { 'jid', 'name', 'added', 'failed' }.
+  def create_group(name:, participants:)
+    post('/group/create', groupName: name, participants: participants)['data']
+  end
+
+  # `action` is one of add, remove, promote, demote; `participants` are phone numbers or JIDs.
+  def update_group_participants(group_jid:, participants:, action:)
+    post('/group/participant', groupJid: group_jid, participants: participants, action: action)
+  end
+
+  def group_invite_link(group_jid:)
+    post('/group/invitelink', groupJid: group_jid, reset: false)['data']
+  end
+
   private
 
   # Evolution Go serialises whatsmeow's MessageInfo as-is, so the id key is "ID" (older builds: "id").
