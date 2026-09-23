@@ -380,4 +380,84 @@ RSpec.describe 'Conversation Messages API', type: :request do
       end
     end
   end
+
+  describe 'API inbox bridge reporting the WhatsApp message id' do
+    let(:api_channel) { create(:channel_api, account: account) }
+    let(:api_inbox) { api_channel.inbox }
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let!(:conversation) { create(:conversation, inbox: api_inbox, account: account) }
+    let!(:message) { create(:message, conversation: conversation, account: account, status: :sent) }
+    let(:url) { api_v1_account_conversation_message_url(account_id: account.id, conversation_id: conversation.display_id, id: message.id) }
+
+    before { create(:inbox_member, inbox: api_inbox, user: agent) }
+
+    it 'stores the source id sent together with a status update' do
+      patch url, params: { status: 'delivered', source_id: '3EB0ABC123' }, headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(message.reload).to have_attributes(status: 'delivered', source_id: '3EB0ABC123')
+    end
+
+    it 'stores the source id on its own, without touching the status' do
+      patch url, params: { source_id: '3EB0ABC123' }, headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(message.reload).to have_attributes(status: 'sent', source_id: '3EB0ABC123')
+    end
+  end
+
+  describe 'POST /api/v1/accounts/{account.id}/conversations/:conversation_id/messages/:id/edit' do
+    let(:evolution_go) { { 'url' => 'https://evo.test', 'token' => 'tok' } }
+    let(:api_channel) { create(:channel_api, account: account, additional_attributes: { 'evolution_go' => evolution_go }) }
+    let(:api_inbox) { api_channel.inbox }
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let(:customer) { create(:contact, account: account, phone_number: '+5511999990001') }
+    let!(:conversation) { create(:conversation, inbox: api_inbox, account: account, contact: customer) }
+    let!(:message) do
+      create(:message, conversation: conversation, account: account, inbox: api_inbox, message_type: :outgoing, sender: agent,
+                       content: 'Reuniao as 10h', source_id: 'WAID:3EB0ABC123')
+    end
+    let(:url) { edit_api_v1_account_conversation_message_url(account_id: account.id, conversation_id: conversation.display_id, id: message.id) }
+
+    before { create(:inbox_member, inbox: api_inbox, user: agent) }
+
+    it 'returns unauthorized without a session' do
+      post url, params: { content: 'Reuniao as 11h' }
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it 'edits the message on WhatsApp and saves the new text' do
+      whatsapp = stub_request(:post, 'https://evo.test/message/edit')
+                 .with(body: { chat: '5511999990001@s.whatsapp.net', messageId: '3EB0ABC123', message: 'Reuniao as 11h' }.to_json)
+                 .to_return(status: 200, body: { message: 'success' }.to_json, headers: { 'Content-Type' => 'application/json' })
+
+      post url, params: { content: 'Reuniao as 11h' }, headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(whatsapp).to have_been_requested
+      expect(message.reload.content).to eq('Reuniao as 11h')
+      expect(message.content_attributes).to include('edited' => true, 'original_content' => 'Reuniao as 10h')
+    end
+
+    it 'explains why a message cannot be edited' do
+      message.update!(created_at: 30.minutes.ago)
+
+      post url, params: { content: 'Reuniao as 11h' }, headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['code']).to eq('window_expired')
+    end
+
+    it 'keeps the message unchanged and returns a bad gateway when WhatsApp refuses the edit' do
+      stub_request(:post, 'https://evo.test/message/edit').to_return(status: 400, body: { error: 'too old' }.to_json,
+                                                                     headers: { 'Content-Type' => 'application/json' })
+
+      post url, params: { content: 'Reuniao as 11h' }, headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.parsed_body['code']).to eq('whatsapp_error')
+      expect(message.reload.content).to eq('Reuniao as 10h')
+    end
+  end
 end

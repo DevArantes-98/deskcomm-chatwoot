@@ -40,7 +40,7 @@ class Messages::EditService
     return :forbidden unless message.sender == user || Current.account_user&.administrator?
     return :inbox_not_supported unless evolution_go_config
 
-    :no_source_id unless EvolutionGo::WhatsappId.source_id?(message.source_id)
+    :no_source_id if message.source_id.blank?
   end
 
   def content_reason
