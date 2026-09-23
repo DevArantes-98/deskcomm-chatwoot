@@ -19,18 +19,35 @@ Chatwoot e rodar dois scripts de configuração. Conversas e contatos continuam 
 
 ## Passo a passo
 
+O código de produção fica na branch `producao` do fork (Chatwoot 4.17.1 + nossas mudanças) e a versão
+publicada recebe uma tag (`v4.17.1-cs1`, depois `cs2`...). Assim dá para voltar para a anterior.
+
 1. **Backup** do Postgres antes de mexer (`pg_dump`), como você já faz.
-2. **Build da imagem** a partir do fork (na VPS ou onde você tiver registry):
+2. **Construir a imagem no seu PC** (Docker Desktop). Não construa na VPS: o build usa ~4 GB de RAM e pode
+   derrubar o Chatwoot que está rodando.
    ```bash
-   git clone -b kanban-nativo https://github.com/DevArantes-98/deskcomm-chatwoot.git
+   git clone -b producao https://github.com/DevArantes-98/deskcomm-chatwoot.git
    cd deskcomm-chatwoot
-   docker build -f docker/Dockerfile -t chatwoot-custom:kanban-nativo .
+   docker build -f docker/Dockerfile -t chatwoot-custom:v4.17.1-cs1 .
    ```
-3. **Trocar a imagem** dos serviços `rails` e `sidekiq` no stack (Portainer > Stack > editar > `image:`)
-   e atualizar. Rollback = voltar a tag anterior.
-4. **Scripts de configuração** (idempotentes, sem downtime): siga o cabeçalho de cada um.
+   Leva de 10 a 20 minutos.
+3. **Levar a imagem para a VPS** (sem registry):
+   ```bash
+   docker save chatwoot-custom:v4.17.1-cs1 | gzip > chatwoot-cs1.tar.gz
+   scp -P 61785 chatwoot-cs1.tar.gz root@177.39.20.182:/root/
+   ssh -p 61785 root@177.39.20.182 "gunzip -c /root/chatwoot-cs1.tar.gz | docker load"
+   ```
+   Como todos os serviços do stack rodam no nó manager, a imagem só precisa existir nele.
+4. **Trocar a imagem no Portainer:** Stacks > (stack do Chatwoot) > Editor. Use `portainer-stack.example.yml`
+   como guia: a única diferença para o stack antigo é `image: chatwoot-custom:v4.17.1-cs1` em
+   `chatwoot_app` **e** `chatwoot_sidekiq` (os dois precisam da imagem nova). Atualize o stack; o
+   Portainer pode avisar que a imagem não está em um registry, isso é esperado para imagem local.
+   O `rails db:prepare` do comando do app roda sozinho na subida (esta versão não tem migrations novas).
+5. **Scripts de configuração** (idempotentes, sem downtime): siga o cabeçalho de cada um.
    - `2026-09-23_motivo_fechamento_e_labels.rb`
    - `2026-09-23_evolution_go_config.rb` (liga a caixa da Evolution Go: sem isso os itens 3, 4 e 5 não aparecem)
+
+**Rollback:** no Portainer, volte `image:` para `chatwoot/chatwoot:v4.17.1` nos dois serviços e atualize.
 
 ## Ajustes na sua ponte (bridge)
 

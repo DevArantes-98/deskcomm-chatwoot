@@ -1,0 +1,266 @@
+version: "3.7"
+
+##############
+#
+# Stack do Chatwoot com o fork personalizado (imagem chatwoot-custom).
+# Unica mudanca em relacao a stack anterior: a linha "image:" dos servicos
+# chatwoot_app e chatwoot_sidekiq (antes chatwoot/chatwoot:v4.17.1).
+#
+# Antes de subir a stack deve criar rede "network_chatwoot"
+# Banco preparado automaticamente na inicializacao
+#
+# Variaveis de Ambiente:
+# https://www.chatwoot.com/docs/self-hosted/configuration/environment-variables
+#
+#############
+
+
+
+services:
+  # PostgreSQL com pgvector
+  postgres_chat:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: chatwoot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: TROQUE_SENHA_POSTGRES #ALTERAR SUA SENHA POSTGRES
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c effective_cache_size=256MB
+      -c maintenance_work_mem=64MB
+      -c max_connections=100
+      -c shared_preload_libraries=vector
+    volumes:
+      - postgres_data_chat:/var/lib/postgresql/data
+    networks:
+      - network_chatwoot
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres_chat -d chatwoot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Aplicação Chatwoot
+  chatwoot_app:
+    image: chatwoot-custom:v4.17.1-cs1
+    command: >
+      sh -c "
+      until pg_isready -h postgres_chat -U postgres_chat; do sleep 3; done &&
+      bundle exec rails db:prepare &&
+      bundle exec rails server -b 0.0.0.0 -p 3000
+      "
+    volumes:
+      - chatwoot_data:/app/storage
+    networks:
+      - network_chatwoot
+      - network_swarm_public
+    environment:
+      # Core
+      NODE_ENV: production
+      RAILS_ENV: production
+      INSTALLATION_ENV: docker
+      SECRET_KEY_BASE: TROQUE_SECRET_KEY_BASE #ALTERAR SECRET KEY
+
+      # URLs
+      BASE_URL: https://chatwoot.seudominio.com.br #ALTERAR SEU DOMINIO
+      FRONTEND_URL: https://chatwoot.seudominio.com.br #ALTERAR SEU DOMINIO
+      FRONTEND_CUSTOM_CSS_URL: https://apiv3.seudominio.com.br/custom-chatwoot.css
+
+      # Branding
+      INSTALLATION_NAME: MinhaEmpresa #ALTERAR NOME DA INSTALACAO
+
+      # Locale
+      LOCALE: pt_BR
+      DEFAULT_LOCALE: pt_BR
+
+      # Security
+      FORCE_SSL: "true"
+      ENABLE_ACCOUNT_SIGNUP: "true"
+      ENABLE_EMAIL_DOMAIN_VALIDATION: "false"
+
+      # Database
+      POSTGRES_HOST: postgres_chat
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: TROQUE_SENHA_POSTGRES #ALTERAR SUA SENHA POSTGRES
+      POSTGRES_DATABASE: chatwoot
+
+      # Redis
+      REDIS_URL: redis://redis:6379
+
+      # Storage
+      ACTIVE_STORAGE_SERVICE: local
+
+      # Logs
+      RAILS_LOG_TO_STDOUT: "true"
+      LOG_LEVEL: info
+
+      # Features
+      USE_INBOX_AVATAR_FOR_BOT: "true"
+
+      # Performance
+      RAILS_MAX_THREADS: 3
+      WEB_CONCURRENCY: 1
+      RACK_TIMEOUT_SERVICE_TIMEOUT: 0
+      ENABLE_RACK_ATTACK: "false"
+      WEBHOOKS_TRIGGER_TIMEOUT: 30
+
+      # E-mail
+      MAILER_SENDER_EMAIL: voce@seudominio.com.br #ALTERAR SEU EMAIL
+      SMTP_DOMAIN: gmail.com
+      SMTP_ADDRESS: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USERNAME: voce@seudominio.com.br #ALTERAR SEU EMAIL
+      SMTP_PASSWORD: TROQUE_SENHA_SMTP #ALTERAR SUA SENHA SMTP
+      SMTP_AUTHENTICATION: login
+      SMTP_ENABLE_STARTTLS_AUTO: "true"
+      MAILER_INBOUND_EMAIL_DOMAIN: seudominio.com.br #ALTERAR SEU EMAIL
+    depends_on:
+      - postgres_chat
+      - redis
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2048M
+        reservations:
+          cpus: "2"
+          memory: 2040M
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=network_swarm_public"
+        - "traefik.http.routers.chatwoot_app_teste.rule=Host(`chatwoot.seudominio.com.br`)" #ALTERAR SEU DOMINIO
+        - "traefik.http.routers.chatwoot_app_teste.entrypoints=websecure"
+        - "traefik.http.routers.chatwoot_app_teste.tls=true"
+        - "traefik.http.routers.chatwoot_app_teste.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.chatwoot_app_teste.service=chatwoot_app_teste"
+        - "traefik.http.routers.chatwoot_app_teste.middlewares=chatwoot_headers_teste"
+        - "traefik.http.services.chatwoot_app_teste.loadbalancer.server.port=3000"
+        - "traefik.http.middlewares.chatwoot_headers_teste.headers.customrequestheaders.X-Forwarded-Proto=https"
+        - "traefik.http.middlewares.chatwoot_headers_teste.headers.customrequestheaders.X-Forwarded-Ssl=on"
+        - "traefik.http.routers.chatwoot_app_teste_http.rule=Host(`chatwoot.seudominio.com.br`)"
+        - "traefik.http.routers.chatwoot_app_teste_http.entrypoints=web"
+        - "traefik.http.routers.chatwoot_app_teste_http.middlewares=redirect-https@docker"
+
+
+  # Sidekiq
+  chatwoot_sidekiq:
+    image: chatwoot-custom:v4.17.1-cs1
+    command: sh -c "sleep 20 && bundle exec sidekiq -C config/sidekiq.yml"
+    volumes:
+      - chatwoot_data:/app/storage
+    networks:
+      - network_chatwoot
+    environment:
+      NODE_ENV: production
+      RAILS_ENV: production
+      INSTALLATION_ENV: docker
+      SECRET_KEY_BASE: TROQUE_SECRET_KEY_BASE #ALTERAR SECRET KEY
+
+      BASE_URL: https://chatwoot.seudominio.com.br #ALTERAR SEU DOMINIO
+      FRONTEND_URL: https://chatwoot.seudominio.com.br #ALTERAR SEU DOMINIO
+
+      INSTALLATION_NAME: MinhaEmpresa
+      LOCALE: pt_BR
+      DEFAULT_LOCALE: pt_BR
+
+      FORCE_SSL: "true"
+      ENABLE_ACCOUNT_SIGNUP: "true"
+      ENABLE_EMAIL_DOMAIN_VALIDATION: "false"
+
+      POSTGRES_HOST: postgres_chat
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: TROQUE_SENHA_POSTGRES #ALTERAR SUA SENHA POSTGRES
+      POSTGRES_DATABASE: chatwoot
+
+      REDIS_URL: redis://redis:6379
+
+      ACTIVE_STORAGE_SERVICE: local
+      RAILS_LOG_TO_STDOUT: "true"
+      LOG_LEVEL: info
+
+      USE_INBOX_AVATAR_FOR_BOT: "true"
+      SIDEKIQ_CONCURRENCY: 5
+
+      MAILER_SENDER_EMAIL: voce@seudominio.com.br
+      SMTP_DOMAIN: gmail.com
+      SMTP_ADDRESS: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USERNAME: voce@seudominio.com.br #ALTERAR SEU EMAIL
+      SMTP_PASSWORD: TROQUE_SENHA_SMTP
+      SMTP_AUTHENTICATION: login
+      SMTP_ENABLE_STARTTLS_AUTO: "true"
+      SMTP_OPENSSL_VERIFY_MODE: peer
+      MAILER_INBOUND_EMAIL_DOMAIN: voce@seudominio.com.br #ALTERAR SEU EMAIL
+    depends_on:
+      - postgres_chat
+      - redis
+      - chatwoot_app
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+        reservations:
+          cpus: "0.5"
+          memory: 516M
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+
+volumes:
+  chatwoot_data:
+    external: true
+    name: chatwoot_data
+  postgres_data_chat:
+    external: true
+    name: postgres_data_chat
+  redis_data:
+    external: true
+    name: redis_data
+
+networks:
+  network_chatwoot:
+    external: true
+    name: network_chatwoot
+  network_swarm_public:
+    external: true
+    name: network_swarm_public
