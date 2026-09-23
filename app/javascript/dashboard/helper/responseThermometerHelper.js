@@ -17,7 +17,15 @@ export const THERMOMETER_THRESHOLDS_MINUTES = {
 
 export const THERMOMETER_LEVELS = ['green', 'yellow', 'orange', 'red'];
 
-const levelForMinutes = minutes => {
+// The theme has no orange palette, hence the arbitrary value for that level.
+export const THERMOMETER_DOT_CLASS = {
+  green: 'bg-n-teal-9',
+  yellow: 'bg-n-amber-9',
+  orange: 'bg-[#f97316]',
+  red: 'bg-n-ruby-9',
+};
+
+export const levelForMinutes = minutes => {
   if (minutes < THERMOMETER_THRESHOLDS_MINUTES.green) return 'green';
   if (minutes < THERMOMETER_THRESHOLDS_MINUTES.yellow) return 'yellow';
   if (minutes < THERMOMETER_THRESHOLDS_MINUTES.orange) return 'orange';

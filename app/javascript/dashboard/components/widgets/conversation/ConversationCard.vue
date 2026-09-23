@@ -14,6 +14,7 @@ import VoiceCallStatus from './VoiceCallStatus.vue';
 import Checkbox from 'dashboard/components-next/checkbox/Checkbox.vue';
 import { useI18n } from 'vue-i18n';
 import { useResponseThermometer } from 'dashboard/composables/useResponseThermometer';
+import { THERMOMETER_DOT_CLASS } from 'dashboard/helper/responseThermometerHelper';
 
 const props = defineProps({
   chat: { type: Object, required: true },
@@ -37,13 +38,6 @@ const emit = defineEmits([
 
 const { t } = useI18n();
 const hovered = ref(false);
-
-const THERMOMETER_DOT_CLASS = {
-  green: 'bg-n-teal-9',
-  yellow: 'bg-n-amber-9',
-  orange: 'bg-orange-500',
-  red: 'bg-n-ruby-9',
-};
 
 const { thermometerStatus } = useResponseThermometer(() => props.chat);
 const thermometerDotClass = computed(
