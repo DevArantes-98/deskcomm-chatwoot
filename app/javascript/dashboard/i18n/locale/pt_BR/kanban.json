@@ -1,0 +1,10 @@
+{
+  "KANBAN": {
+    "TITLE": "Kanban",
+    "UNASSIGNED_COLUMN": "Sem responsável",
+    "NO_AGENTS": "Adicione agentes à sua conta para vê-los como colunas do Kanban.",
+    "GO_TO_SETTINGS": "Ir para as configurações de Agentes",
+    "FETCH_CONVERSATIONS_ERROR": "Não foi possível carregar as conversas do quadro Kanban.",
+    "UPDATE_ASSIGNEE_ERROR": "Não foi possível reatribuir a conversa. Tente novamente."
+  }
+}

@@ -11,6 +11,7 @@ import { LocalStorage } from 'shared/helpers/localStorage';
 import { ACCOUNT_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import { getInboxIconByType } from 'dashboard/helper/inbox';
+import { canEditMessage } from 'dashboard/helper/messageEditHelper';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import {
   MESSAGE_TYPES,
@@ -150,6 +151,7 @@ const route = useRoute();
 const inboxGetter = useMapGetter('inboxes/getInbox');
 const inbox = computed(() => inboxGetter.value(props.inboxId) || {});
 const isOnChatwootCloud = useMapGetter('globalConfig/isOnChatwootCloud');
+const currentRole = useMapGetter('getCurrentRole');
 const { replaceInstallationName } = useBranding();
 
 const isCaptainMessage = computed(() => {
@@ -402,6 +404,21 @@ const contextMenuEnabledOptions = computed(() => {
       !isFailedOrProcessing &&
       !isMessageDeleted.value,
     cannedResponse: isOutgoing && hasText && !isMessageDeleted.value,
+    edit: canEditMessage({
+      isOutgoing,
+      isPrivate: props.private,
+      isText: props.contentType === CONTENT_TYPES.TEXT,
+      hasAttachments,
+      isDeleted: !!isMessageDeleted.value,
+      sourceId: props.sourceId,
+      createdAt: props.createdAt,
+      isOwnMessage:
+        props.senderType === 'User' && props.senderId === props.currentUserId,
+      isAdmin: currentRole.value === 'administrator',
+      inboxSupportsEdit: !!(
+        inbox.value.evolution_go_enabled ?? inbox.value.evolutionGoEnabled
+      ),
+    }),
     copyLink: !isFailedOrProcessing,
     translate: !isFailedOrProcessing && !isMessageDeleted.value && hasText,
     replyTo:

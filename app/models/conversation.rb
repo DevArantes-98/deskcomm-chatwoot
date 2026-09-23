@@ -203,6 +203,13 @@ class Conversation < ApplicationRecord
     unread_messages.where(account_id: account_id).incoming.last(10)
   end
 
+  # Messages that look like they contain a URL, for the "Links" panel.
+  # There's no separate Link record, so this filters at the DB level and the
+  # caller extracts the actual URL(s) per message (see Message.extract_urls).
+  def messages_with_links
+    messages.where("content ~* '(https?://)'")
+  end
+
   def cached_label_list_array
     (cached_label_list || '').split(',').map(&:strip)
   end

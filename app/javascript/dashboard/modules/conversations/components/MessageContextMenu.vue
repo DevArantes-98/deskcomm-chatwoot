@@ -16,6 +16,7 @@ import MenuItem from '../../../components/widgets/conversation/contextMenu/menuI
 import { useTrack } from 'dashboard/composables';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import ReportCaptainMessageDialog from './ReportCaptainMessageDialog.vue';
+import EditMessageModal from './EditMessageModal.vue';
 
 export default {
   components: {
@@ -24,6 +25,7 @@ export default {
     ContextMenu,
     NextButton,
     ReportCaptainMessageDialog,
+    EditMessageModal,
   },
   props: {
     message: {
@@ -59,6 +61,7 @@ export default {
     return {
       isCannedResponseModalOpen: false,
       showDeleteModal: false,
+      showEditModal: false,
     };
   },
   computed: {
@@ -140,6 +143,13 @@ export default {
       this.$emit('replyTo', this.message);
       this.handleClose();
     },
+    openEditModal() {
+      this.handleClose();
+      this.showEditModal = true;
+    },
+    closeEditModal() {
+      this.showEditModal = false;
+    },
     openDeleteModal() {
       this.handleClose();
       this.showDeleteModal = true;
@@ -180,6 +190,15 @@ export default {
         :on-close="hideCannedResponseModal"
       />
     </woot-modal>
+    <!-- Edit message -->
+    <EditMessageModal
+      v-if="showEditModal && enabledOptions['edit']"
+      v-model:show="showEditModal"
+      :conversation-id="conversationId"
+      :message-id="messageId"
+      :content="messageContent"
+      @close="closeEditModal"
+    />
     <!-- Confirm Deletion -->
     <woot-delete-modal
       v-if="showDeleteModal && enabledOptions['delete']"
@@ -263,6 +282,16 @@ export default {
           }"
           variant="icon"
           @click.stop="openReportDialog"
+        />
+        <hr v-if="enabledOptions['edit']" />
+        <MenuItem
+          v-if="enabledOptions['edit']"
+          :option="{
+            icon: 'edit',
+            label: $t('CONVERSATION.CONTEXT_MENU.EDIT'),
+          }"
+          variant="icon"
+          @click.stop="openEditModal"
         />
         <hr v-if="enabledOptions['delete']" />
         <MenuItem

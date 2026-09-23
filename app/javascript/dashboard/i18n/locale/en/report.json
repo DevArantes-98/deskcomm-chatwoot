@@ -670,5 +670,53 @@
     "AVG_REPLY_TIME": "Avg. Customer Waiting Time",
     "RESOLUTION_COUNT": "Resolution Count",
     "CONVERSATIONS": "No. of conversations"
+  },
+  "CS_DASHBOARD": {
+    "TITLE": "CS dashboard",
+    "DESCRIPTION": "Response times, conversation volume, closing reasons and customers who went quiet.",
+    "RANGE": "Last {days} days",
+    "GROUP_BY": {
+      "DAY": "By day",
+      "WEEK": "By week",
+      "MONTH": "By month"
+    },
+    "ALL_INBOXES": "All inboxes",
+    "LOADING": "Loading dashboard...",
+    "ERROR": "Could not load the dashboard. Please try again.",
+    "KPI": {
+      "AVG_REPLY_TIME": "Avg. response time",
+      "FIRST_RESPONSE": "Avg. first response",
+      "CREATED": "Conversations started",
+      "RESOLVED": "Conversations resolved",
+      "DORMANT": "Silent for {days}+ days"
+    },
+    "VOLUME": {
+      "TITLE": "Volume over time",
+      "CREATED": "Started",
+      "RESOLVED": "Resolved"
+    },
+    "REASONS": {
+      "TITLE": "Closing reasons",
+      "EMPTY": "No conversations were resolved in this period.",
+      "NO_REASON": "No reason given"
+    },
+    "MANAGERS": {
+      "TITLE": "Response time by account manager",
+      "EMPTY": "No replies recorded in this period.",
+      "MANAGER": "Account manager",
+      "REPLY_TIME": "Response time",
+      "FIRST_RESPONSE": "First response",
+      "CONVERSATIONS": "Conversations",
+      "NO_MANAGER": "Unassigned"
+    },
+    "DORMANT": {
+      "TITLE": "Customers silent for more than {days} days",
+      "SHOWING": "Showing {shown} of {total}, most recently silent first.",
+      "EMPTY": "Every customer has talked to you recently.",
+      "CUSTOMER": "Customer",
+      "PHONE": "Phone",
+      "SILENT_FOR": "Silent for",
+      "DAYS": "{count} days"
+    }
   }
 }

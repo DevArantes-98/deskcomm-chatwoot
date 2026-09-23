@@ -8,13 +8,14 @@ import inboxMixin from 'shared/mixins/inboxMixin';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { getAllowedFileTypesByChannel } from '@chatwoot/utils';
 import VideoCallButton from '../VideoCallButton.vue';
+import SendContactButton from '../SendContactButton.vue';
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
 import { mapGetters } from 'vuex';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
 export default {
   name: 'ReplyBottomPanel',
-  components: { NextButton, FileUpload, VideoCallButton },
+  components: { NextButton, FileUpload, VideoCallButton, SendContactButton },
   mixins: [inboxMixin],
   props: {
     isNote: {
@@ -175,6 +176,12 @@ export default {
       return {
         'is-note-mode': this.isNote,
       };
+    },
+    showSendContactButton() {
+      if (this.isOnPrivateNote || this.isEditorDisabled) return false;
+      return !!(
+        this.inbox.evolution_go_enabled ?? this.inbox.evolutionGoEnabled
+      );
     },
     showAttachButton() {
       if (this.isEditorDisabled) return false;
@@ -373,6 +380,10 @@ export default {
           !isOnPrivateNote &&
           !isEditorDisabled
         "
+        :conversation-id="conversationId"
+      />
+      <SendContactButton
+        v-if="showSendContactButton"
         :conversation-id="conversationId"
       />
       <transition name="modal-fade">

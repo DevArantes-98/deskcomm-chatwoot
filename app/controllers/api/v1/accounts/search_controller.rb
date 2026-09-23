@@ -19,6 +19,14 @@ class Api::V1::Accounts::SearchController < Api::V1::Accounts::BaseController
     @result = search('Article')
   end
 
+  def groups
+    @result = search('Group')
+  end
+
+  def files
+    @result = search('File')
+  end
+
   private
 
   def search(search_type)

@@ -32,7 +32,7 @@ describe SearchService do
       it 'returns all for all' do
         search_type = 'all'
         search = described_class.new(current_user: user, current_account: account, params: params, search_type: search_type)
-        expect(search.perform.keys).to match_array(%i[contacts messages conversations articles])
+        expect(search.perform.keys).to match_array(%i[contacts groups files messages conversations articles])
       end
 
       it 'returns contacts for contacts' do
@@ -276,6 +276,75 @@ describe SearchService do
         params = { q: new_converstion.display_id }
         search = described_class.new(current_user: user, current_account: account, params: params, search_type: 'Conversation')
         expect(search.perform[:conversations].map(&:id)).to include new_converstion.id
+      end
+    end
+
+    context 'when group search' do
+      let!(:group) { create(:contact, name: 'Potter Fans', identifier: '1203630123456789@g.us', account: account) }
+
+      before { create(:conversation, contact: group, inbox: inbox, account: account) }
+
+      def search_for(type, query = 'Potter')
+        described_class.new(current_user: user, current_account: account, params: { q: query }, search_type: type).perform
+      end
+
+      it 'returns matching groups with their latest conversation' do
+        latest = create(:conversation, contact: group, inbox: inbox, account: account, last_activity_at: 1.minute.from_now)
+
+        results = search_for('Group')[:groups]
+
+        expect(results.map(&:id)).to eq([group.id])
+        expect(results.first.conversation_id).to eq(latest.display_id)
+      end
+
+      it 'keeps groups out of the contact results' do
+        expect(search_for('Contact')[:contacts].map(&:id)).to include(harry.id)
+        expect(search_for('Contact')[:contacts].map(&:id)).not_to include(group.id)
+      end
+
+      it 'does not return groups that only have conversations in inboxes the agent cannot access' do
+        hidden = create(:contact, name: 'Potter Secret', identifier: '1203630987654321@g.us', account: account)
+        create(:conversation, contact: hidden, inbox: create(:inbox, account: account), account: account)
+
+        expect(search_for('Group')[:groups].map(&:id)).not_to include(hidden.id)
+      end
+    end
+
+    context 'when file search' do
+      let!(:file_message) { create(:message, account: account, inbox: inbox, conversation: conversation) }
+
+      def attach(message, filename, file_type: :file)
+        attachment = message.attachments.new(account: account, file_type: file_type)
+        attachment.file.attach(io: StringIO.new('content'), filename: filename, content_type: 'application/pdf')
+        attachment.save!
+        attachment
+      end
+
+      def search_files(query)
+        described_class.new(current_user: user, current_account: account, params: { q: query }, search_type: 'File').perform[:files]
+      end
+
+      it 'finds uploaded files by file name' do
+        report = attach(file_message, 'relatorio_setembro.pdf')
+        attach(file_message, 'contrato.pdf')
+
+        expect(search_files('relatorio').map(&:id)).to eq([report.id])
+        expect(search_files('.pdf').length).to eq(2)
+      end
+
+      it 'does not return files from inboxes the agent cannot access' do
+        other_inbox = create(:inbox, account: account)
+        other_conversation = create(:conversation, contact: harry, inbox: other_inbox, account: account)
+        hidden_message = create(:message, account: account, inbox: other_inbox, conversation: other_conversation)
+        attach(hidden_message, 'relatorio_secreto.pdf')
+
+        expect(search_files('relatorio')).to be_empty
+      end
+
+      it 'ignores attachments that are not uploaded files' do
+        attachment = file_message.attachments.create!(account: account, file_type: :location, coordinates_lat: 1, coordinates_long: 2)
+
+        expect(search_files(attachment.id.to_s)).to be_empty
       end
     end
 

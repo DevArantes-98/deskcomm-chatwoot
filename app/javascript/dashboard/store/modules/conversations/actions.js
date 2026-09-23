@@ -128,6 +128,25 @@ const actions = {
     }
   },
 
+  fetchAllLinks: async ({ commit }, conversationId) => {
+    let links = [];
+
+    try {
+      const { data } = await ConversationApi.getLinks(conversationId);
+      links = data.payload;
+    } catch (error) {
+      Sentry.setContext('Conversation', {
+        id: conversationId,
+      });
+      Sentry.captureException(error);
+    } finally {
+      commit(types.SET_ALL_LINKS, {
+        id: conversationId,
+        data: links,
+      });
+    }
+  },
+
   syncActiveConversationMessages: async (
     { commit, state, dispatch },
     { conversationId }
@@ -366,6 +385,17 @@ const actions = {
     } catch (error) {
       throw new Error(error);
     }
+  },
+
+  // Errors are re-thrown untouched so the caller can read the server's `code`.
+  editMessage: async ({ commit }, { conversationId, messageId, content }) => {
+    const { data } = await MessageApi.edit(conversationId, messageId, content);
+    commit(types.ADD_MESSAGE, data);
+  },
+
+  sendContactMessage: async ({ commit }, { conversationId, contactId }) => {
+    const { data } = await MessageApi.sendContact(conversationId, contactId);
+    commit(types.ADD_MESSAGE, data);
   },
 
   deleteConversation: async ({ commit, dispatch }, conversationId) => {

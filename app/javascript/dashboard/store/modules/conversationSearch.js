@@ -18,6 +18,8 @@ export const initialState = {
   conversationRecords: [],
   messageRecords: [],
   articleRecords: [],
+  groupRecords: [],
+  fileRecords: [],
   uiFlags: {
     isFetching: false,
     isSearchCompleted: false,
@@ -25,6 +27,8 @@ export const initialState = {
     conversation: { isFetching: false },
     message: { isFetching: false },
     article: { isFetching: false },
+    group: { isFetching: false },
+    file: { isFetching: false },
   },
 };
 
@@ -43,6 +47,12 @@ export const getters = {
   },
   getArticleRecords(state) {
     return state.articleRecords;
+  },
+  getGroupRecords(state) {
+    return state.groupRecords;
+  },
+  getFileRecords(state) {
+    return state.fileRecords;
   },
   getUIFlags(state) {
     return state.uiFlags;
@@ -84,6 +94,8 @@ export const actions = {
         dispatch('conversationSearch', { q, ...filters }),
         dispatch('messageSearch', { q, ...filters }),
         dispatch('articleSearch', { q, ...filters }),
+        dispatch('groupSearch', { q, ...filters }),
+        dispatch('fileSearch', { q, ...filters }),
       ]);
     } catch (error) {
       // Ignore error
@@ -164,6 +176,40 @@ export const actions = {
       commit(types.ARTICLE_SEARCH_SET_UI_FLAG, { isFetching: false });
     }
   },
+  async groupSearch({ commit }, payload) {
+    const { page = 1, ...searchParams } = payload;
+    commit(types.GROUP_SEARCH_SET_UI_FLAG, { isFetching: true });
+    try {
+      const { data } = await SearchAPI.groups({ ...searchParams, page });
+      commit(types.GROUP_SEARCH_SET, data.payload.groups);
+      commit(types.GROUP_SEARCH_SET_UI_FLAG, {
+        hasMore: data.payload.groups.length === PER_PAGE,
+      });
+      return true;
+    } catch (error) {
+      // Failure is reported so callers can roll back their page counter
+      return false;
+    } finally {
+      commit(types.GROUP_SEARCH_SET_UI_FLAG, { isFetching: false });
+    }
+  },
+  async fileSearch({ commit }, payload) {
+    const { page = 1, ...searchParams } = payload;
+    commit(types.FILE_SEARCH_SET_UI_FLAG, { isFetching: true });
+    try {
+      const { data } = await SearchAPI.files({ ...searchParams, page });
+      commit(types.FILE_SEARCH_SET, data.payload.files);
+      commit(types.FILE_SEARCH_SET_UI_FLAG, {
+        hasMore: data.payload.files.length === PER_PAGE,
+      });
+      return true;
+    } catch (error) {
+      // Failure is reported so callers can roll back their page counter
+      return false;
+    } finally {
+      commit(types.FILE_SEARCH_SET_UI_FLAG, { isFetching: false });
+    }
+  },
   async clearSearchResults({ commit }) {
     commit(types.CLEAR_SEARCH_RESULTS);
   },
@@ -188,6 +234,12 @@ export const mutations = {
   [types.ARTICLE_SEARCH_SET](state, records) {
     state.articleRecords = appendUniqueRecords(state.articleRecords, records);
   },
+  [types.GROUP_SEARCH_SET](state, records) {
+    state.groupRecords = appendUniqueRecords(state.groupRecords, records);
+  },
+  [types.FILE_SEARCH_SET](state, records) {
+    state.fileRecords = appendUniqueRecords(state.fileRecords, records);
+  },
   [types.SEARCH_CONVERSATIONS_SET_UI_FLAG](state, uiFlags) {
     state.uiFlags = { ...state.uiFlags, ...uiFlags };
   },
@@ -206,11 +258,19 @@ export const mutations = {
   [types.ARTICLE_SEARCH_SET_UI_FLAG](state, uiFlags) {
     state.uiFlags.article = { ...state.uiFlags.article, ...uiFlags };
   },
+  [types.GROUP_SEARCH_SET_UI_FLAG](state, uiFlags) {
+    state.uiFlags.group = { ...state.uiFlags.group, ...uiFlags };
+  },
+  [types.FILE_SEARCH_SET_UI_FLAG](state, uiFlags) {
+    state.uiFlags.file = { ...state.uiFlags.file, ...uiFlags };
+  },
   [types.CLEAR_SEARCH_RESULTS](state) {
     state.contactRecords = [];
     state.conversationRecords = [];
     state.messageRecords = [];
     state.articleRecords = [];
+    state.groupRecords = [];
+    state.fileRecords = [];
   },
 };
 

@@ -20,4 +20,33 @@ RSpec.describe Channel::Api do
       end
     end
   end
+
+  describe 'Evolution Go link' do
+    let(:config) { { 'url' => 'https://evo.test', 'token' => 'secret' } }
+    let(:channel) { create(:channel_api, additional_attributes: { 'evolution_go' => config, 'theme' => 'dark' }) }
+
+    it 'exposes the link only when both url and token are present' do
+      expect(channel.evolution_go_config).to eq(config)
+
+      channel.update!(additional_attributes: { 'evolution_go' => { 'url' => 'https://evo.test' } })
+      expect(channel.evolution_go_config).to be_nil
+    end
+
+    it 'keeps the link out of the attributes that are shown to agents' do
+      expect(channel.public_additional_attributes).to eq('theme' => 'dark')
+    end
+
+    it 'survives inbox settings updates that replace the additional attributes' do
+      channel.update!(additional_attributes: { 'theme' => 'light' })
+
+      expect(channel.reload.evolution_go_config).to eq(config)
+      expect(channel.additional_attributes['theme']).to eq('light')
+    end
+
+    it 'can be removed explicitly' do
+      channel.update!(additional_attributes: { 'evolution_go' => nil })
+
+      expect(channel.reload.evolution_go_config).to be_nil
+    end
+  end
 end

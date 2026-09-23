@@ -149,6 +149,34 @@ describe('#mutations', () => {
     });
   });
 
+  describe('#GROUP_SEARCH_SET', () => {
+    it('should append new group records without duplicates', () => {
+      const state = { groupRecords: [{ id: 1 }] };
+      mutations[types.GROUP_SEARCH_SET](state, [{ id: 1 }, { id: 2 }]);
+      expect(state.groupRecords).toEqual([{ id: 1 }, { id: 2 }]);
+    });
+  });
+
+  describe('#FILE_SEARCH_SET', () => {
+    it('should append new file records without duplicates', () => {
+      const state = { fileRecords: [{ id: 1 }] };
+      mutations[types.FILE_SEARCH_SET](state, [{ id: 1 }, { id: 2 }]);
+      expect(state.fileRecords).toEqual([{ id: 1 }, { id: 2 }]);
+    });
+  });
+
+  describe('#GROUP_SEARCH_SET_UI_FLAG and #FILE_SEARCH_SET_UI_FLAG', () => {
+    it('set the UI flags of each type', () => {
+      const state = {
+        uiFlags: { group: { isFetching: true }, file: { isFetching: true } },
+      };
+      mutations[types.GROUP_SEARCH_SET_UI_FLAG](state, { isFetching: false });
+      mutations[types.FILE_SEARCH_SET_UI_FLAG](state, { hasMore: true });
+      expect(state.uiFlags.group).toEqual({ isFetching: false });
+      expect(state.uiFlags.file).toEqual({ isFetching: true, hasMore: true });
+    });
+  });
+
   describe('#CLEAR_SEARCH_RESULTS', () => {
     it('should clear all search records', () => {
       const state = {

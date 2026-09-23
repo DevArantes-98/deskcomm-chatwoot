@@ -169,9 +169,16 @@ Rails.application.routes.draw do
                 member do
                   post :translate
                   post :retry
+                  post :edit
                 end
               end
               resources :assignments, only: [:create]
+              resources :shared_contacts, only: [:create]
+              resource :group, only: [:show] do
+                get :invite_link
+                post :add_participants
+                post :remove_participants
+              end
               resources :labels, only: [:create, :index]
               resource :participants, only: [:show, :create, :update, :destroy]
               resource :direct_uploads, only: [:create]
@@ -189,10 +196,14 @@ Rails.application.routes.draw do
               post :custom_attributes
               post :destroy_custom_attributes
               get :attachments
+              get :links
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
             end
           end
+
+          resources :whatsapp_groups, only: [:create]
+          resource :cs_dashboard, only: [:show], controller: 'cs_dashboard'
 
           resources :search, only: [:index] do
             collection do
@@ -200,6 +211,8 @@ Rails.application.routes.draw do
               get :messages
               get :contacts
               get :articles
+              get :groups
+              get :files
             end
           end
 

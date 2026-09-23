@@ -1,0 +1,10 @@
+{
+  "KANBAN": {
+    "TITLE": "Kanban",
+    "UNASSIGNED_COLUMN": "Unassigned",
+    "NO_AGENTS": "Add agents to your account to see them as Kanban columns.",
+    "GO_TO_SETTINGS": "Go to Agents settings",
+    "FETCH_CONVERSATIONS_ERROR": "Could not load conversations for the Kanban board.",
+    "UPDATE_ASSIGNEE_ERROR": "Could not reassign the conversation. Please try again."
+  }
+}

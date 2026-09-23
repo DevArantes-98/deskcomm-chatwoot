@@ -265,6 +265,7 @@ export default {
         return;
       }
       this.fetchAllAttachmentsFromCurrentChat();
+      this.fetchAllLinksFromCurrentChat();
       this.fetchSuggestions();
       this.messageSentSinceOpened = false;
       this.resetReplyEditorHeight();
@@ -283,6 +284,7 @@ export default {
   mounted() {
     this.addScrollListener();
     this.fetchAllAttachmentsFromCurrentChat();
+    this.fetchAllLinksFromCurrentChat();
     this.fetchSuggestions();
   },
 
@@ -335,6 +337,9 @@ export default {
     },
     fetchAllAttachmentsFromCurrentChat() {
       this.$store.dispatch('fetchAllAttachments', this.currentChat.id);
+    },
+    fetchAllLinksFromCurrentChat() {
+      this.$store.dispatch('fetchAllLinks', this.currentChat.id);
     },
     removeBusListeners() {
       emitter.off(BUS_EVENTS.SCROLL_TO_MESSAGE, this.onScrollToMessage);

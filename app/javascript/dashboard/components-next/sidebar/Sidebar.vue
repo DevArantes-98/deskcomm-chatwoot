@@ -586,6 +586,13 @@ const menuItems = computed(() => {
         ]
       : []),
     {
+      name: 'Kanban',
+      label: t('SIDEBAR.KANBAN'),
+      icon: 'i-lucide-kanban',
+      to: accountScopedRoute('kanban_dashboard_index'),
+      activeOn: ['kanban_dashboard_index'],
+    },
+    {
       name: 'Contacts',
       label: t('SIDEBAR.CONTACTS'),
       icon: 'i-lucide-contact',
@@ -678,6 +685,11 @@ const menuItems = computed(() => {
           name: 'Report Overview',
           label: t('SIDEBAR.REPORTS_OVERVIEW'),
           to: accountScopedRoute('account_overview_reports'),
+        },
+        {
+          name: 'Report CS Dashboard',
+          label: t('SIDEBAR.REPORTS_CS_DASHBOARD'),
+          to: accountScopedRoute('cs_dashboard_reports'),
         },
         {
           name: 'Report Conversation',

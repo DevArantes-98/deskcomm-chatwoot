@@ -12,6 +12,9 @@ import UnreadBadge from 'dashboard/components-next/Conversation/ConversationCard
 import SLACardLabel from './components/SLACardLabel.vue';
 import VoiceCallStatus from './VoiceCallStatus.vue';
 import Checkbox from 'dashboard/components-next/checkbox/Checkbox.vue';
+import { useI18n } from 'vue-i18n';
+import { useResponseThermometer } from 'dashboard/composables/useResponseThermometer';
+import { THERMOMETER_DOT_CLASS } from 'dashboard/helper/responseThermometerHelper';
 
 const props = defineProps({
   chat: { type: Object, required: true },
@@ -33,7 +36,20 @@ const emit = defineEmits([
   'deSelectConversation',
 ]);
 
+const { t } = useI18n();
 const hovered = ref(false);
+
+const { thermometerStatus } = useResponseThermometer(() => props.chat);
+const thermometerDotClass = computed(
+  () => THERMOMETER_DOT_CLASS[thermometerStatus.value?.level]
+);
+const thermometerTitle = computed(() => {
+  const minutes = thermometerStatus.value?.minutes;
+  if (minutes === undefined) return '';
+  return t('CHAT_LIST.RESPONSE_THERMOMETER.WAITING_FOR', {
+    minutes: Math.floor(minutes),
+  });
+});
 
 const unreadCount = computed(() => props.chat.unread_count);
 const hasUnread = computed(() => unreadCount.value > 0);
@@ -219,7 +235,15 @@ watch(
         class="absolute flex flex-col ltr:right-3 rtl:left-3"
         :class="showMetaSection ? 'top-8' : 'top-4'"
       >
-        <span class="ml-auto font-normal leading-4 text-xxs">
+        <span
+          class="flex items-center gap-1 ml-auto font-normal leading-4 text-xxs"
+        >
+          <span
+            v-if="thermometerDotClass"
+            :title="thermometerTitle"
+            :class="thermometerDotClass"
+            class="flex-shrink-0 rounded-full size-1.5"
+          />
           <TimeAgo
             :last-activity-timestamp="chat.timestamp"
             :created-at-timestamp="chat.created_at"

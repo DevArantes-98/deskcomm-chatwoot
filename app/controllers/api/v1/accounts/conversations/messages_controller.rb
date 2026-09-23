@@ -1,8 +1,15 @@
 class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::Conversations::BaseController
+  include EvolutionGoErrorHandling
+
   before_action :ensure_api_inbox, only: :update
 
   def index
     @messages = message_finder.perform
+  end
+
+  def edit
+    @message = Messages::EditService.new(message: message, content: params[:content], user: Current.user).perform
+    render :update
   end
 
   def create
@@ -15,6 +22,7 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
 
   def update
     Messages::StatusUpdateService.new(message, permitted_params[:status], permitted_params[:external_error]).perform
+    message.update!(source_id: permitted_params[:source_id]) if permitted_params[:source_id].present?
     @message = message
   end
 
@@ -81,7 +89,7 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def permitted_params
-    params.permit(:id, :target_language, :status, :external_error)
+    params.permit(:id, :target_language, :status, :external_error, :source_id)
   end
 
   def already_translated_content_available?

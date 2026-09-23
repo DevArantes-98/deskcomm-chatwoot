@@ -30,6 +30,10 @@ master.key
 # Ignore env files
 .env
 
+# Local-only dev overrides (not committed)
+docker-compose.override.yml
+docker/entrypoints/vite.local.sh
+
 public/uploads
 public/packs*
 public/assets/administrate*
