@@ -25,6 +25,8 @@ import SearchResultConversationsList from './SearchResultConversationsList.vue';
 import SearchResultMessagesList from './SearchResultMessagesList.vue';
 import SearchResultContactsList from './SearchResultContactsList.vue';
 import SearchResultArticlesList from './SearchResultArticlesList.vue';
+import SearchResultGroupsList from './SearchResultGroupsList.vue';
+import SearchResultFilesList from './SearchResultFilesList.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -39,6 +41,8 @@ const pages = ref({
   conversations: 1,
   messages: 1,
   articles: 1,
+  groups: 1,
+  files: 1,
 });
 
 const contactRecords = useMapGetter('conversationSearch/getContactRecords');
@@ -47,6 +51,8 @@ const conversationRecords = useMapGetter(
 );
 const messageRecords = useMapGetter('conversationSearch/getMessageRecords');
 const articleRecords = useMapGetter('conversationSearch/getArticleRecords');
+const groupRecords = useMapGetter('conversationSearch/getGroupRecords');
+const fileRecords = useMapGetter('conversationSearch/getFileRecords');
 const uiFlags = useMapGetter('conversationSearch/getUIFlags');
 
 const addTypeToRecords = (records, type) =>
@@ -64,6 +70,8 @@ const mappedMessages = computed(() =>
 const mappedArticles = computed(() =>
   addTypeToRecords(articleRecords, 'article')
 );
+const mappedGroups = computed(() => addTypeToRecords(groupRecords, 'group'));
+const mappedFiles = computed(() => addTypeToRecords(fileRecords, 'file'));
 
 const isSelectedTabAll = computed(() => selectedTab.value === 'all');
 
@@ -79,6 +87,8 @@ const contacts = computed(() => sliceRecordsIfAllTab(mappedContacts));
 const conversations = computed(() => sliceRecordsIfAllTab(mappedConversations));
 const messages = computed(() => sliceRecordsIfAllTab(mappedMessages));
 const articles = computed(() => sliceRecordsIfAllTab(mappedArticles));
+const groups = computed(() => sliceRecordsIfAllTab(mappedGroups));
+const files = computed(() => sliceRecordsIfAllTab(mappedFiles));
 
 const filterByTab = tab =>
   computed(() => selectedTab.value === tab || isSelectedTabAll.value);
@@ -87,6 +97,8 @@ const filterContacts = filterByTab('contacts');
 const filterConversations = filterByTab('conversations');
 const filterMessages = filterByTab('messages');
 const filterArticles = filterByTab('articles');
+const filterGroups = filterByTab('groups');
+const filterFiles = filterByTab('files');
 
 const { shouldShow, isFeatureFlagEnabled } = usePolicy();
 
@@ -108,9 +120,17 @@ const TABS_CONFIG = {
     permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
     count: () => mappedConversations.value.length,
   },
+  groups: {
+    permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
+    count: () => mappedGroups.value.length,
+  },
   messages: {
     permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
     count: () => mappedMessages.value.length,
+  },
+  files: {
+    permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
+    count: () => mappedFiles.value.length,
   },
   articles: {
     permissions: [...ROLES, PORTAL_PERMISSIONS],
@@ -150,7 +170,11 @@ const totalSearchResultsCount = computed(() => {
     },
     {
       permissions: [...ROLES, ...CONVERSATION_PERMISSIONS],
-      count: () => conversations.value.length + messages.value.length,
+      count: () =>
+        conversations.value.length +
+        messages.value.length +
+        groups.value.length +
+        files.value.length,
     },
     {
       permissions: [...ROLES, PORTAL_PERMISSIONS],
@@ -183,13 +207,16 @@ const activeTabIndex = computed(() => {
 });
 
 const isFetchingAny = computed(() => {
-  const { contact, message, conversation, article, isFetching } = uiFlags.value;
+  const { contact, message, conversation, article, group, file, isFetching } =
+    uiFlags.value;
   return (
     isFetching ||
     contact.isFetching ||
     message.isFetching ||
     conversation.isFetching ||
-    article.isFetching
+    article.isFetching ||
+    group.isFetching ||
+    file.isFetching
   );
 });
 
@@ -218,6 +245,8 @@ const showLoadMore = computed(() => {
     conversations: mappedConversations.value,
     messages: mappedMessages.value,
     articles: mappedArticles.value,
+    groups: mappedGroups.value,
+    files: mappedFiles.value,
   }[selectedTab.value];
 
   // hasMore comes from the raw API page size; stored record counts shrink
@@ -227,6 +256,8 @@ const showLoadMore = computed(() => {
     conversations: uiFlags.value.conversation.hasMore,
     messages: uiFlags.value.message.hasMore,
     articles: uiFlags.value.article.hasMore,
+    groups: uiFlags.value.group.hasMore,
+    files: uiFlags.value.file.hasMore,
   }[selectedTab.value];
 
   return records?.length > 0 && Boolean(hasMore);
@@ -239,6 +270,8 @@ const showViewMore = computed(() => ({
     mappedConversations.value?.length > 5 && isSelectedTabAll.value,
   messages: mappedMessages.value?.length > 5 && isSelectedTabAll.value,
   articles: mappedArticles.value?.length > 5 && isSelectedTabAll.value,
+  groups: mappedGroups.value?.length > 5 && isSelectedTabAll.value,
+  files: mappedFiles.value?.length > 5 && isSelectedTabAll.value,
 }));
 
 const filters = ref({
@@ -248,7 +281,14 @@ const filters = ref({
 });
 
 const clearSearchResult = () => {
-  pages.value = { contacts: 1, conversations: 1, messages: 1, articles: 1 };
+  pages.value = {
+    contacts: 1,
+    conversations: 1,
+    messages: 1,
+    articles: 1,
+    groups: 1,
+    files: 1,
+  };
   store.dispatch('conversationSearch/clearSearchResults');
 };
 
@@ -322,6 +362,8 @@ const loadMore = async () => {
     conversations: 'conversationSearch/conversationSearch',
     messages: 'conversationSearch/messageSearch',
     articles: 'conversationSearch/articleSearch',
+    groups: 'conversationSearch/groupSearch',
+    files: 'conversationSearch/fileSearch',
   };
 
   if (uiFlags.value.isFetching || selectedTab.value === 'all') return;
@@ -426,6 +468,52 @@ onUnmounted(() => {
                 sm
                 outline
                 @click="selectedTab = 'contacts'"
+              />
+            </Policy>
+
+            <Policy
+              :permissions="[...ROLES, ...CONVERSATION_PERMISSIONS]"
+              class="flex flex-col justify-center"
+            >
+              <SearchResultGroupsList
+                v-if="filterGroups"
+                :is-fetching="uiFlags.group.isFetching"
+                :groups="groups"
+                :query="query"
+                :show-title="isSelectedTabAll"
+                :class="searchResultSectionClass"
+              />
+              <NextButton
+                v-if="showViewMore.groups"
+                :label="t(`SEARCH.VIEW_MORE`)"
+                icon="i-lucide-eye"
+                slate
+                sm
+                outline
+                @click="selectedTab = 'groups'"
+              />
+            </Policy>
+
+            <Policy
+              :permissions="[...ROLES, ...CONVERSATION_PERMISSIONS]"
+              class="flex flex-col justify-center"
+            >
+              <SearchResultFilesList
+                v-if="filterFiles"
+                :is-fetching="uiFlags.file.isFetching"
+                :files="files"
+                :query="query"
+                :show-title="isSelectedTabAll"
+                :class="searchResultSectionClass"
+              />
+              <NextButton
+                v-if="showViewMore.files"
+                :label="t(`SEARCH.VIEW_MORE`)"
+                icon="i-lucide-eye"
+                slate
+                sm
+                outline
+                @click="selectedTab = 'files'"
               />
             </Policy>
 

@@ -76,6 +76,8 @@ describe('#actions', () => {
       });
       expect(dispatch).toHaveBeenCalledWith('messageSearch', { q: 'test' });
       expect(dispatch).toHaveBeenCalledWith('articleSearch', { q: 'test' });
+      expect(dispatch).toHaveBeenCalledWith('groupSearch', { q: 'test' });
+      expect(dispatch).toHaveBeenCalledWith('fileSearch', { q: 'test' });
     });
 
     it('should pass filters to all search actions including articleSearch', async () => {
@@ -190,6 +192,58 @@ describe('#actions', () => {
       await expect(
         actions.messageSearch({ commit }, { q: 'test', page: 2 })
       ).resolves.toBe(false);
+    });
+  });
+
+  describe('#groupSearch', () => {
+    it('should handle successful group search', async () => {
+      axios.get.mockResolvedValue({
+        data: { payload: { groups: [{ id: 1 }] } },
+      });
+
+      await actions.groupSearch({ commit }, { q: 'test', page: 1 });
+      expect(commit.mock.calls).toEqual([
+        [types.GROUP_SEARCH_SET_UI_FLAG, { isFetching: true }],
+        [types.GROUP_SEARCH_SET, [{ id: 1 }]],
+        [types.GROUP_SEARCH_SET_UI_FLAG, { hasMore: false }],
+        [types.GROUP_SEARCH_SET_UI_FLAG, { isFetching: false }],
+      ]);
+    });
+
+    it('should report a failed group search', async () => {
+      axios.get.mockRejectedValue({});
+      const result = await actions.groupSearch({ commit }, { q: 'test' });
+      expect(result).toBe(false);
+      expect(commit.mock.calls).toEqual([
+        [types.GROUP_SEARCH_SET_UI_FLAG, { isFetching: true }],
+        [types.GROUP_SEARCH_SET_UI_FLAG, { isFetching: false }],
+      ]);
+    });
+  });
+
+  describe('#fileSearch', () => {
+    it('should handle successful file search', async () => {
+      axios.get.mockResolvedValue({
+        data: { payload: { files: [{ id: 1 }] } },
+      });
+
+      await actions.fileSearch({ commit }, { q: 'test', page: 1 });
+      expect(commit.mock.calls).toEqual([
+        [types.FILE_SEARCH_SET_UI_FLAG, { isFetching: true }],
+        [types.FILE_SEARCH_SET, [{ id: 1 }]],
+        [types.FILE_SEARCH_SET_UI_FLAG, { hasMore: false }],
+        [types.FILE_SEARCH_SET_UI_FLAG, { isFetching: false }],
+      ]);
+    });
+
+    it('should report a failed file search', async () => {
+      axios.get.mockRejectedValue({});
+      const result = await actions.fileSearch({ commit }, { q: 'test' });
+      expect(result).toBe(false);
+      expect(commit.mock.calls).toEqual([
+        [types.FILE_SEARCH_SET_UI_FLAG, { isFetching: true }],
+        [types.FILE_SEARCH_SET_UI_FLAG, { isFetching: false }],
+      ]);
     });
   });
 

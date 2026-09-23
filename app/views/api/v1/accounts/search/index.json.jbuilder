@@ -9,6 +9,16 @@ json.payload do
       json.partial! 'contact', formats: [:json], contact: contact
     end
   end
+  json.groups do
+    json.array! @result[:groups] do |group|
+      json.partial! 'group', formats: [:json], group: group
+    end
+  end
+  json.files do
+    json.array! @result[:files] do |attachment|
+      json.partial! 'file', formats: [:json], attachment: attachment
+    end
+  end
   json.messages do
     json.array! @result[:messages] do |message|
       json.partial! 'message', formats: [:json], message: message

@@ -3,16 +3,21 @@
     "TABS": {
       "ALL": "All results",
       "CONTACTS": "Contacts",
+      "GROUPS": "Groups",
+      "FILES": "Files",
       "CONVERSATIONS": "Conversations",
       "MESSAGES": "Messages",
       "ARTICLES": "Articles"
     },
     "SECTION": {
       "CONTACTS": "Contacts",
+      "GROUPS": "Groups",
+      "FILES": "Files",
       "CONVERSATIONS": "Conversations",
       "MESSAGES": "Messages",
       "ARTICLES": "Articles"
     },
+    "OPEN_FILE": "Open file",
     "VIEW_MORE": "View more",
     "LOAD_MORE": "Load more",
     "SEARCHING_DATA": "Searching",

@@ -119,6 +119,25 @@ describe('#SearchAPI', () => {
       });
     });
 
+    it('#groups', () => {
+      searchAPI.groups({ q: 'test', page: 1 });
+      expect(axiosMock.get).toHaveBeenCalledWith('/api/v1/search/groups', {
+        params: { q: 'test', page: 1, since: undefined, until: undefined },
+      });
+    });
+
+    it('#files with date filters', () => {
+      searchAPI.files({
+        q: 'test',
+        page: 2,
+        since: 1700000000,
+        until: 1732000000,
+      });
+      expect(axiosMock.get).toHaveBeenCalledWith('/api/v1/search/files', {
+        params: { q: 'test', page: 2, since: 1700000000, until: 1732000000 },
+      });
+    });
+
     it('#articles with date filters', () => {
       searchAPI.articles({
         q: 'test',

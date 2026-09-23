@@ -1,4 +1,6 @@
 class SearchService
+  include SearchService::GroupAndFileFilters
+
   pattr_initialize [:current_user!, :current_account!, :params!, :search_type!]
 
   def account_user
@@ -15,8 +17,13 @@ class SearchService
       { contacts: filter_contacts }
     when 'Article'
       { articles: filter_articles }
+    when 'Group'
+      { groups: filter_groups }
+    when 'File'
+      { files: filter_files }
     else
-      { contacts: filter_contacts, messages: filter_messages, conversations: filter_conversations, articles: filter_articles }
+      { contacts: filter_contacts, groups: filter_groups, files: filter_files, messages: filter_messages,
+        conversations: filter_conversations, articles: filter_articles }
     end
   end
 
@@ -165,7 +172,7 @@ class SearchService
     contacts_query = current_account.contacts.where(
       "name ILIKE :search OR email ILIKE :search OR phone_number
       ILIKE :search OR identifier ILIKE :search", search: "%#{search_query}%"
-    )
+    ).where("contacts.identifier IS NULL OR contacts.identifier NOT LIKE '%@g.us'")
 
     contacts_query = apply_time_filter(contacts_query, 'last_activity_at') if current_account.feature_enabled?('advanced_search')
 

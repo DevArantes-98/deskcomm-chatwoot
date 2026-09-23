@@ -59,6 +59,28 @@ class SearchAPI extends ApiClient {
       },
     });
   }
+
+  groups({ q, page = 1, since, until }) {
+    return axios.get(`${this.url}/groups`, {
+      params: {
+        q,
+        page: page,
+        since,
+        until,
+      },
+    });
+  }
+
+  files({ q, page = 1, since, until }) {
+    return axios.get(`${this.url}/files`, {
+      params: {
+        q,
+        page: page,
+        since,
+        until,
+      },
+    });
+  }
 }
 
 export default new SearchAPI();
