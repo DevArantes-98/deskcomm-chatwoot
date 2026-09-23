@@ -1,5 +1,8 @@
 {
   "CHAT_LIST": {
+    "RESPONSE_THERMOMETER": {
+      "WAITING_FOR": "Aguardando resposta há {minutes} min"
+    },
     "LOADING": "Buscando conversas",
     "LOAD_MORE_CONVERSATIONS": "Carregar mais conversas",
     "EOF": "Todas as conversas carregadas 🎉",
