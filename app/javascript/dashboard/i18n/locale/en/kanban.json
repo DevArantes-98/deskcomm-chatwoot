@@ -2,9 +2,9 @@
   "KANBAN": {
     "TITLE": "Kanban",
     "UNASSIGNED_COLUMN": "Unassigned",
-    "NO_LIST_ATTRIBUTE": "Create a contact custom attribute of type \"List\" to use as the Kanban stages (e.g. New, In progress, Closed).",
-    "GO_TO_SETTINGS": "Go to Custom Attributes settings",
-    "FETCH_CONTACTS_ERROR": "Could not load contacts for the Kanban board.",
-    "UPDATE_CONTACT_ERROR": "Could not move the contact. Please try again."
+    "NO_AGENTS": "Add agents to your account to see them as Kanban columns.",
+    "GO_TO_SETTINGS": "Go to Agents settings",
+    "FETCH_CONVERSATIONS_ERROR": "Could not load conversations for the Kanban board.",
+    "UPDATE_ASSIGNEE_ERROR": "Could not reassign the conversation. Please try again."
   }
 }

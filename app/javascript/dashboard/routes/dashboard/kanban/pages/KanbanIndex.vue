@@ -1,96 +1,93 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import Draggable from 'vuedraggable';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
-import ContactAPI from 'dashboard/api/contacts';
+import ConversationAPI from 'dashboard/api/inbox/conversation';
+import { frontendURL, conversationUrl } from 'dashboard/helper/URLHelper';
 
 const { t } = useI18n();
 const store = useStore();
+const route = useRoute();
+const router = useRouter();
 
 const UNASSIGNED = '__unassigned__';
 
-const contactAttributes = useMapGetter('attributes/getContactAttributes');
-const attributeUiFlags = useMapGetter('attributes/getUIFlags');
+// The "account manager" for a client is the same person Chatwoot already
+// tracks as the conversation's assignee, so the board is keyed off that
+// instead of a separate custom attribute.
+const agents = useMapGetter('agents/getVerifiedAgents');
+const agentUiFlags = useMapGetter('agents/getUIFlags');
 
-const selectedAttributeKey = ref('');
-const contacts = ref([]);
-const isLoadingContacts = ref(false);
+const conversations = ref([]);
+const isLoadingConversations = ref(false);
 const columns = ref({});
 
-const listAttributes = computed(() =>
-  (contactAttributes.value || []).filter(
-    attribute => attribute.attributeDisplayType === 'list'
-  )
-);
-
-const selectedAttribute = computed(() =>
-  listAttributes.value.find(
-    attribute => attribute.attributeKey === selectedAttributeKey.value
-  )
-);
-
 const isLoading = computed(
-  () => attributeUiFlags.value.isFetching || isLoadingContacts.value
+  () => agentUiFlags.value.isFetching || isLoadingConversations.value
 );
 
-const columnOrder = computed(() => {
-  const attr = selectedAttribute.value;
-  if (!attr) return [];
-  return [...(attr.attributeValues || []), UNASSIGNED];
+const columnOrder = computed(() => [
+  ...agents.value.map(agent => String(agent.id)),
+  UNASSIGNED,
+]);
+
+const agentById = computed(() => {
+  const map = {};
+  agents.value.forEach(agent => {
+    map[agent.id] = agent;
+  });
+  return map;
 });
 
 const columnLabel = key => {
   if (key === UNASSIGNED) return t('KANBAN.UNASSIGNED_COLUMN');
-  return key;
+  return agentById.value[key]?.name || key;
 };
 
-const fetchAllContacts = async () => {
-  isLoadingContacts.value = true;
+const fetchAllConversations = async () => {
+  isLoadingConversations.value = true;
   const all = [];
   let page = 1;
   let totalCount = Infinity;
   try {
     while (all.length < totalCount && page <= 100) {
       // eslint-disable-next-line no-await-in-loop
-      const { data } = await ContactAPI.get(page);
+      const { data: { data } = {} } = await ConversationAPI.get({
+        status: 'open',
+        page,
+      });
       const payload = data.payload || [];
       if (!payload.length) break;
       all.push(...payload);
-      totalCount = data.meta?.count ?? all.length;
+      totalCount = data.meta?.all_count ?? all.length;
       page += 1;
     }
-    contacts.value = all;
+    conversations.value = all;
   } catch (error) {
-    useAlert(t('KANBAN.FETCH_CONTACTS_ERROR'));
+    useAlert(t('KANBAN.FETCH_CONVERSATIONS_ERROR'));
   } finally {
-    isLoadingContacts.value = false;
+    isLoadingConversations.value = false;
   }
 };
 
 const buildColumns = () => {
-  const attr = selectedAttribute.value;
-  if (!attr) {
-    columns.value = {};
-    return;
-  }
   const cols = {};
-  (attr.attributeValues || []).forEach(value => {
-    cols[value] = [];
+  columnOrder.value.forEach(key => {
+    cols[key] = [];
   });
-  cols[UNASSIGNED] = [];
-  contacts.value.forEach(contact => {
-    const value = contact.custom_attributes
-      ? contact.custom_attributes[attr.attributeKey]
-      : undefined;
-    if (value && cols[value] !== undefined) {
-      cols[value].push(contact);
-    } else {
-      cols[UNASSIGNED].push(contact);
-    }
+  conversations.value.forEach(conversation => {
+    const assignee = conversation.meta?.assignee;
+    const key =
+      assignee && conversation.meta?.assignee_type === 'User'
+        ? String(assignee.id)
+        : UNASSIGNED;
+    if (cols[key] === undefined) cols[key] = [];
+    cols[key].push(conversation);
   });
   columns.value = cols;
 };
@@ -98,36 +95,36 @@ const buildColumns = () => {
 const onColumnChange = async (event, columnKey) => {
   const moved = event.added;
   if (!moved) return;
-  const contact = moved.element;
-  const attr = selectedAttribute.value;
-  if (!attr) return;
+  const conversation = moved.element;
+  const agentId = columnKey === UNASSIGNED ? null : Number(columnKey);
   try {
-    if (columnKey === UNASSIGNED) {
-      await ContactAPI.destroyCustomAttributes(contact.id, [
-        attr.attributeKey,
-      ]);
-    } else {
-      await ContactAPI.update(contact.id, {
-        custom_attributes: { [attr.attributeKey]: columnKey },
-      });
-    }
+    await store.dispatch('assignAgent', {
+      conversationId: conversation.id,
+      agentId,
+      assigneeType: 'User',
+    });
   } catch (error) {
-    useAlert(t('KANBAN.UPDATE_CONTACT_ERROR'));
-    // Reverte a coluna local buscando os dados de novo, já que a UI já
-    // moveu o card antes da resposta da API chegar.
-    fetchAllContacts().then(buildColumns);
+    useAlert(t('KANBAN.UPDATE_ASSIGNEE_ERROR'));
+    // Revert the optimistic UI move by refetching, since the card was
+    // already moved locally before the API response came back.
+    fetchAllConversations().then(buildColumns);
   }
 };
 
-watch(selectedAttributeKey, buildColumns);
-watch(contacts, buildColumns);
+const openConversation = conversation => {
+  router.push({
+    path: frontendURL(
+      conversationUrl({
+        accountId: route.params.accountId,
+        id: conversation.id,
+      })
+    ),
+  });
+};
 
 onMounted(async () => {
-  await store.dispatch('attributes/get');
-  if (listAttributes.value.length) {
-    selectedAttributeKey.value = listAttributes.value[0].attributeKey;
-  }
-  await fetchAllContacts();
+  await store.dispatch('agents/get');
+  await fetchAllConversations();
   buildColumns();
 });
 </script>
@@ -140,34 +137,21 @@ onMounted(async () => {
       <h1 class="text-lg font-medium text-n-slate-12">
         {{ $t('KANBAN.TITLE') }}
       </h1>
-      <select
-        v-if="listAttributes.length"
-        v-model="selectedAttributeKey"
-        class="max-w-xs !mb-0"
-      >
-        <option
-          v-for="attribute in listAttributes"
-          :key="attribute.attributeKey"
-          :value="attribute.attributeKey"
-        >
-          {{ attribute.attributeDisplayName }}
-        </option>
-      </select>
     </div>
 
     <div v-if="isLoading" class="flex items-center justify-center flex-1">
-      <Spinner size="large" />
+      <Spinner :size="32" />
     </div>
 
     <div
-      v-else-if="!listAttributes.length"
+      v-else-if="!agents.length"
       class="flex flex-col items-center justify-center flex-1 gap-2 p-6 text-center"
     >
       <p class="text-n-slate-11">
-        {{ $t('KANBAN.NO_LIST_ATTRIBUTE') }}
+        {{ $t('KANBAN.NO_AGENTS') }}
       </p>
       <router-link
-        :to="{ name: 'attributes_list' }"
+        :to="{ name: 'agent_list' }"
         class="text-n-brand hover:underline"
       >
         {{ $t('KANBAN.GO_TO_SETTINGS') }}
@@ -181,9 +165,15 @@ onMounted(async () => {
         class="flex flex-col w-72 min-w-[18rem] bg-n-solid-2 rounded-xl"
       >
         <div
-          class="flex items-center justify-between px-3 py-2 text-sm font-medium border-b border-n-weak text-n-slate-12"
+          class="flex items-center gap-2 px-3 py-2 text-sm font-medium border-b border-n-weak text-n-slate-12"
         >
-          <span>{{ columnLabel(columnKey) }}</span>
+          <Avatar
+            v-if="columnKey !== UNASSIGNED"
+            :src="agentById[columnKey]?.thumbnail"
+            :name="columnLabel(columnKey)"
+            :size="20"
+          />
+          <span class="flex-1 truncate">{{ columnLabel(columnKey) }}</span>
           <span class="text-n-slate-10">{{
             (columns[columnKey] || []).length
           }}</span>
@@ -191,32 +181,40 @@ onMounted(async () => {
         <Draggable
           :list="columns[columnKey]"
           class="flex flex-col flex-1 gap-2 p-2 overflow-y-auto min-h-[4rem]"
-          group="kanban-contacts"
+          group="kanban-conversations"
           item-key="id"
           :data-column="columnKey"
           @change="event => onColumnChange(event, columnKey)"
         >
-          <template #item="{ element: contact }">
-            <router-link
-              :to="{
-                name: 'contacts_edit',
-                params: { contactId: contact.id },
-              }"
-              class="flex items-center gap-2 p-2 bg-n-solid-1 border rounded-lg shadow-sm cursor-grab border-n-weak hover:border-n-brand"
+          <template #item="{ element: conversation }">
+            <button
+              type="button"
+              class="flex items-center w-full gap-2 p-2 text-left bg-n-solid-1 border rounded-lg shadow-sm cursor-grab border-n-weak hover:border-n-brand"
+              @click="openConversation(conversation)"
             >
-              <Avatar :src="contact.thumbnail" :name="contact.name" :size="24" />
+              <Avatar
+                :src="conversation.meta?.sender?.thumbnail"
+                :name="conversation.meta?.sender?.name"
+                :size="24"
+              />
               <div class="flex-1 min-w-0">
                 <p class="text-sm truncate text-n-slate-12">
-                  {{ contact.name }}
+                  {{ conversation.meta?.sender?.name }}
                 </p>
                 <p
-                  v-if="contact.email || contact.phone_number"
+                  v-if="
+                    conversation.meta?.sender?.email ||
+                    conversation.meta?.sender?.phone_number
+                  "
                   class="text-xs truncate text-n-slate-10"
                 >
-                  {{ contact.email || contact.phone_number }}
+                  {{
+                    conversation.meta?.sender?.email ||
+                    conversation.meta?.sender?.phone_number
+                  }}
                 </p>
               </div>
-            </router-link>
+            </button>
           </template>
         </Draggable>
       </div>

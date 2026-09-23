@@ -1,10 +1,10 @@
 {
   "KANBAN": {
     "TITLE": "Kanban",
-    "UNASSIGNED_COLUMN": "Sem etapa",
-    "NO_LIST_ATTRIBUTE": "Crie um atributo personalizado de contato do tipo \"Lista\" para usar como as etapas do Kanban (ex.: Novo, Em atendimento, Fechado).",
-    "GO_TO_SETTINGS": "Ir para as configurações de Atributos Personalizados",
-    "FETCH_CONTACTS_ERROR": "Não foi possível carregar os contatos do quadro Kanban.",
-    "UPDATE_CONTACT_ERROR": "Não foi possível mover o contato. Tente novamente."
+    "UNASSIGNED_COLUMN": "Sem responsável",
+    "NO_AGENTS": "Adicione agentes à sua conta para vê-los como colunas do Kanban.",
+    "GO_TO_SETTINGS": "Ir para as configurações de Agentes",
+    "FETCH_CONVERSATIONS_ERROR": "Não foi possível carregar as conversas do quadro Kanban.",
+    "UPDATE_ASSIGNEE_ERROR": "Não foi possível reatribuir a conversa. Tente novamente."
   }
 }
