@@ -1,0 +1,56 @@
+# Builds the customized Chatwoot image and publishes it to GitHub Container Registry
+# (ghcr.io/<owner>/<repo>:<tag>) so Portainer can pull it directly.
+#
+# Publish a version by pushing a tag that starts with "cs-", e.g.:
+#   git tag cs-4.17.1-2 && git push origin cs-4.17.1-2
+# (tags starting with "v" would trigger the upstream Docker Hub workflows instead, which fail on this fork)
+
+name: Build custom image
+
+on:
+  push:
+    tags:
+      - 'cs-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      # Docker image names must be lowercase, GitHub owner/repo names may not be
+      - name: Compute image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=ref,event=tag
+            type=sha
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

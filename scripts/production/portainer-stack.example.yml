@@ -2,7 +2,7 @@ version: "3.7"
 
 ##############
 #
-# Stack do Chatwoot com o fork personalizado (imagem chatwoot-custom).
+# Stack do Chatwoot com o fork personalizado (imagem publicada no GHCR).
 # Unica mudanca em relacao a stack anterior: a linha "image:" dos servicos
 # chatwoot_app e chatwoot_sidekiq (antes chatwoot/chatwoot:v4.17.1).
 #
@@ -64,7 +64,7 @@ services:
 
   # Aplicação Chatwoot
   chatwoot_app:
-    image: chatwoot-custom:v4.17.1-cs1
+    image: ghcr.io/devarantes-98/deskcomm-chatwoot:cs-4.17.1-1
     command: >
       sh -c "
       until pg_isready -h postgres_chat -U postgres_chat; do sleep 3; done &&
@@ -176,7 +176,7 @@ services:
 
   # Sidekiq
   chatwoot_sidekiq:
-    image: chatwoot-custom:v4.17.1-cs1
+    image: ghcr.io/devarantes-98/deskcomm-chatwoot:cs-4.17.1-1
     command: sh -c "sleep 20 && bundle exec sidekiq -C config/sidekiq.yml"
     volumes:
       - chatwoot_data:/app/storage

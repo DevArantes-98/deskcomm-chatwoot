@@ -19,31 +19,28 @@ Chatwoot e rodar dois scripts de configuração. Conversas e contatos continuam 
 
 ## Passo a passo
 
-O código de produção fica na branch `producao` do fork (Chatwoot 4.17.1 + nossas mudanças) e a versão
-publicada recebe uma tag (`v4.17.1-cs1`, depois `cs2`...). Assim dá para voltar para a anterior.
+O código de produção fica na branch `producao` do fork (Chatwoot 4.17.1 + nossas mudanças). A imagem é
+construída pelo próprio GitHub (workflow `Build custom image`) e publicada no GHCR, então o Portainer
+só precisa **puxar** `ghcr.io/devarantes-98/deskcomm-chatwoot:<tag>`.
+
+**Publicar uma versão nova** (na `producao`, depois de mergear as mudanças):
+```bash
+git tag cs-4.17.1-2 && git push origin cs-4.17.1-2
+```
+Use tags que começam com `cs-` (tags `v...` disparam os workflows do Chatwoot oficial, que falham no fork).
+Acompanhe em GitHub > Actions > "Build custom image"; leva de 15 a 30 minutos.
+
+**Só na primeira vez:** o pacote nasce privado. Em GitHub > seu perfil > Packages > `deskcomm-chatwoot` >
+Package settings > Change visibility > **Public** (a imagem não contém senhas; elas ficam no stack).
+Se preferir manter privado, cadastre o registry `ghcr.io` no Portainer com um token do GitHub com
+permissão `read:packages`.
 
 1. **Backup** do Postgres antes de mexer (`pg_dump`), como você já faz.
-2. **Construir a imagem no seu PC** (Docker Desktop). Não construa na VPS: o build usa ~4 GB de RAM e pode
-   derrubar o Chatwoot que está rodando.
-   ```bash
-   git clone -b producao https://github.com/DevArantes-98/deskcomm-chatwoot.git
-   cd deskcomm-chatwoot
-   docker build -f docker/Dockerfile -t chatwoot-custom:v4.17.1-cs1 .
-   ```
-   Leva de 10 a 20 minutos.
-3. **Levar a imagem para a VPS** (sem registry):
-   ```bash
-   docker save chatwoot-custom:v4.17.1-cs1 | gzip > chatwoot-cs1.tar.gz
-   scp -P 61785 chatwoot-cs1.tar.gz root@177.39.20.182:/root/
-   ssh -p 61785 root@177.39.20.182 "gunzip -c /root/chatwoot-cs1.tar.gz | docker load"
-   ```
-   Como todos os serviços do stack rodam no nó manager, a imagem só precisa existir nele.
-4. **Trocar a imagem no Portainer:** Stacks > (stack do Chatwoot) > Editor. Use `portainer-stack.example.yml`
-   como guia: a única diferença para o stack antigo é `image: chatwoot-custom:v4.17.1-cs1` em
-   `chatwoot_app` **e** `chatwoot_sidekiq` (os dois precisam da imagem nova). Atualize o stack; o
-   Portainer pode avisar que a imagem não está em um registry, isso é esperado para imagem local.
+2. **Trocar o stack no Portainer:** Stacks > (stack do Chatwoot) > Editor > cole o conteúdo do seu stack
+   (`portainer-stack.example.yml` é o modelo sem senhas) > marque "Re-pull image" > Update the stack.
+   A única diferença para o stack antigo é `image:` nos serviços `chatwoot_app` **e** `chatwoot_sidekiq`.
    O `rails db:prepare` do comando do app roda sozinho na subida (esta versão não tem migrations novas).
-5. **Scripts de configuração** (idempotentes, sem downtime): siga o cabeçalho de cada um.
+3. **Scripts de configuração** (idempotentes, sem downtime): siga o cabeçalho de cada um.
    - `2026-09-23_motivo_fechamento_e_labels.rb`
    - `2026-09-23_evolution_go_config.rb` (liga a caixa da Evolution Go: sem isso os itens 3, 4 e 5 não aparecem)
 
