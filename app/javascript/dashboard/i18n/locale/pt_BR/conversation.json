@@ -319,6 +319,7 @@
       "CANCEL": "Cancelar",
       "SUCCESS": "Mensagem editada",
       "EDITED": "editada",
+      "ORIGINAL": "Mensagem original: {content}",
       "ERRORS": {
         "generic": "Não foi possível editar a mensagem. Tente novamente.",
         "whatsapp_error": "O WhatsApp não aceitou a edição. Tente novamente.",

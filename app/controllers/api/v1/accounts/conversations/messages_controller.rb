@@ -1,7 +1,7 @@
 class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::Conversations::BaseController
   include EvolutionGoErrorHandling
 
-  before_action :ensure_api_inbox, only: :update
+  before_action :ensure_api_inbox, only: [:update, :edit_by_source]
 
   def index
     @messages = message_finder.perform
@@ -23,7 +23,14 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   def update
     Messages::StatusUpdateService.new(message, permitted_params[:status], permitted_params[:external_error]).perform
     message.update!(source_id: permitted_params[:source_id]) if permitted_params[:source_id].present?
+    apply_external_edit(message) if params[:content].present?
     @message = message
+  end
+
+  # For bridges: the WhatsApp edit event only carries the id of the original message (its source_id).
+  def edit_by_source
+    @message = apply_external_edit(message_by_source)
+    render :update
   end
 
   def destroy
@@ -68,6 +75,16 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     @message ||= @conversation.messages.find(permitted_params[:id])
   end
 
+  def message_by_source
+    whatsapp_id = EvolutionGo::WhatsappId.from_source_id(permitted_params[:source_id])
+    @conversation.messages.find_by!(source_id: [whatsapp_id, EvolutionGo::WhatsappId.to_source_id(whatsapp_id)])
+  end
+
+  def apply_external_edit(target)
+    edited_at = Time.zone.at(permitted_params[:edited_at].to_i) if permitted_params[:edited_at].present?
+    Messages::ApplyEditService.new(message: target, content: params[:content], edited_at: edited_at).perform
+  end
+
   def message_finder
     @message_finder ||= MessageFinder.new(@conversation, params)
   end
@@ -89,7 +106,7 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def permitted_params
-    params.permit(:id, :target_language, :status, :external_error, :source_id)
+    params.permit(:id, :target_language, :status, :external_error, :source_id, :edited_at)
   end
 
   def already_translated_content_available?

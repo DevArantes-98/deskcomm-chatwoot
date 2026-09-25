@@ -30,10 +30,9 @@ git tag cs-4.17.1-2 && git push origin cs-4.17.1-2
 Use tags que começam com `cs-` (tags `v...` disparam os workflows do Chatwoot oficial, que falham no fork).
 Acompanhe em GitHub > Actions > "Build custom image"; leva de 15 a 30 minutos.
 
-**Só na primeira vez:** o pacote nasce privado. Em GitHub > seu perfil > Packages > `deskcomm-chatwoot` >
-Package settings > Change visibility > **Public** (a imagem não contém senhas; elas ficam no stack).
-Se preferir manter privado, cadastre o registry `ghcr.io` no Portainer com um token do GitHub com
-permissão `read:packages`.
+**Visibilidade da imagem:** o pacote no GHCR herdou a visibilidade do repositório (público), então o
+Portainer baixa sem credencial. A imagem não contém senhas; elas ficam no stack. Se um dia o pacote ficar
+privado, cadastre o registry `ghcr.io` no Portainer com um token do GitHub com permissão `read:packages`.
 
 1. **Backup** do Postgres antes de mexer (`pg_dump`), como você já faz.
 2. **Trocar o stack no Portainer:** Stacks > (stack do Chatwoot) > Editor > cole o conteúdo do seu stack
@@ -54,6 +53,16 @@ permissão `read:packages`.
   `{ "source_id": "<id da mensagem no WhatsApp>" }` (pode ir junto com `"status": "delivered"`).
   Vale o ID puro (`3EB0...`) ou com prefixo `WAID:`. Sem isso o Chatwoot não sabe qual mensagem editar
   e a opção "Editar" simplesmente não aparece nessas mensagens.
+- **Edição feita pelo cliente no WhatsApp.** Quando o cliente edita uma mensagem, a Evolution Go avisa a
+  ponte com um evento de mensagem do tipo `edit` (traz o ID da mensagem original e o texto novo). A ponte
+  deve repassar ao Chatwoot:
+  `PATCH /api/v1/accounts/:account_id/conversations/:display_id/messages/edit_by_source` com
+  `{ "source_id": "<ID da mensagem original no WhatsApp>", "content": "<texto novo>", "edited_at": <unix, opcional> }`
+  (ou `PATCH .../messages/:id` com `content`, se a ponte já guarda o ID do Chatwoot). O `source_id` é o mesmo
+  que a ponte informou ao criar a mensagem, com ou sem o prefixo `WAID:`. O Chatwoot troca o texto, marca a
+  mensagem como "editada" e guarda o texto original (aparece ao passar o mouse sobre "editada"). Repetir o
+  mesmo evento é seguro e texto vazio é recusado. Sem essa chamada, o Chatwoot continua mostrando só o texto
+  original.
 - **Edição gera `message_updated`** no webhook da caixa (`content_attributes.edited = true`). A ponte
   deve ignorar esse evento (não reenviar).
 - **Contato enviado pelo Chatwoot (#4)** já sai pelo Evolution Go. Para não duplicar nem marcar como

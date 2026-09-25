@@ -74,14 +74,6 @@ class Messages::EditService
   end
 
   def save_locally
-    attributes = message.content_attributes.to_h
-    message.update!(
-      content: new_content,
-      content_attributes: attributes.merge(
-        'edited' => true,
-        'edited_at' => Time.current.to_i,
-        'original_content' => attributes['original_content'] || message.content
-      )
-    )
+    Messages::ApplyEditService.new(message: message, content: new_content).perform
   end
 end
