@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { messageTimestamp } from 'shared/helpers/timeHelper';
 
 import MessageStatus from './MessageStatus.vue';
@@ -32,7 +33,17 @@ const {
   contentAttributes,
 } = useMessageContext();
 
+const { t } = useI18n();
+
 const isEdited = computed(() => !!contentAttributes.value?.edited);
+const originalTooltip = computed(() => {
+  const original =
+    contentAttributes.value?.originalContent ??
+    contentAttributes.value?.original_content;
+  return original
+    ? t('CONVERSATION.EDIT_MESSAGE.ORIGINAL', { content: original })
+    : '';
+});
 
 const readableTime = computed(() =>
   messageTimestamp(createdAt.value, 'LLL d, h:mm a')
@@ -137,7 +148,7 @@ const statusToShow = computed(() => {
   <div class="text-xs flex items-center gap-1.5">
     <div class="inline">
       <time class="inline">{{ readableTime }}</time>
-      <span v-if="isEdited" class="ms-1 italic">
+      <span v-if="isEdited" v-tooltip.top="originalTooltip" class="ms-1 italic">
         {{ `· ${$t('CONVERSATION.EDIT_MESSAGE.EDITED')}` }}
       </span>
     </div>

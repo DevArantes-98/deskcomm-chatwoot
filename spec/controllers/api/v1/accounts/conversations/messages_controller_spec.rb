@@ -460,4 +460,76 @@ RSpec.describe 'Conversation Messages API', type: :request do
       expect(message.reload.content).to eq('Reuniao as 10h')
     end
   end
+
+  describe 'API inbox bridge reporting an edit made on WhatsApp' do
+    let(:api_channel) { create(:channel_api, account: account) }
+    let(:api_inbox) { api_channel.inbox }
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let!(:conversation) { create(:conversation, inbox: api_inbox, account: account) }
+    let!(:message) do
+      create(:message, conversation: conversation, account: account, inbox: api_inbox, message_type: :incoming,
+                       content: 'Reuniao as 10h', source_id: 'WAID:3EB0CUSTOMER1', status: :sent)
+    end
+    let(:messages_url) { api_v1_account_conversation_messages_url(account_id: account.id, conversation_id: conversation.display_id) }
+
+    before { create(:inbox_member, inbox: api_inbox, user: agent) }
+
+    context 'when the bridge knows the Chatwoot message id' do
+      let(:url) { api_v1_account_conversation_message_url(account_id: account.id, conversation_id: conversation.display_id, id: message.id) }
+
+      it 'updates the text and marks it as edited' do
+        patch url, params: { content: 'Reuniao as 11h', edited_at: 1_800_000_000 }, headers: agent.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['content']).to eq('Reuniao as 11h')
+        expect(message.reload.content_attributes).to include('edited' => true, 'edited_at' => 1_800_000_000, 'original_content' => 'Reuniao as 10h')
+      end
+
+      it 'keeps working for plain status updates, even if the bridge sends an empty content' do
+        patch url, params: { status: 'delivered', content: '' }, headers: agent.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(message.reload).to have_attributes(status: 'delivered', content: 'Reuniao as 10h')
+      end
+    end
+
+    context 'when the bridge only knows the WhatsApp id of the original message' do
+      let(:url) { "#{messages_url}/edit_by_source" }
+
+      it 'finds the message by source id, with or without the WAID prefix' do
+        patch url, params: { source_id: '3EB0CUSTOMER1', content: 'Reuniao as 11h' }, headers: agent.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:success)
+        expect(message.reload.content).to eq('Reuniao as 11h')
+
+        patch url, params: { source_id: 'WAID:3EB0CUSTOMER1', content: 'Reuniao as 12h' }, headers: agent.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:success)
+        expect(message.reload.content).to eq('Reuniao as 12h')
+        expect(message.content_attributes['original_content']).to eq('Reuniao as 10h')
+      end
+
+      it 'returns not found for an unknown WhatsApp id' do
+        patch url, params: { source_id: 'UNKNOWN', content: 'x' }, headers: agent.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it 'refuses an empty text' do
+        patch url, params: { source_id: '3EB0CUSTOMER1', content: ' ' }, headers: agent.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['code']).to eq('blank_content')
+      end
+
+      it 'is only available for API inboxes' do
+        web_inbox = create(:inbox, account: account)
+        web_conversation = create(:conversation, inbox: web_inbox, account: account)
+        create(:inbox_member, inbox: web_inbox, user: agent)
+        web_url = api_v1_account_conversation_messages_url(account_id: account.id, conversation_id: web_conversation.display_id)
+
+        patch "#{web_url}/edit_by_source", params: { source_id: 'x', content: 'y' }, headers: agent.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+  end
 end

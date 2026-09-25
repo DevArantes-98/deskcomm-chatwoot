@@ -357,6 +357,7 @@
       "CANCEL": "Cancel",
       "SUCCESS": "Message edited",
       "EDITED": "edited",
+      "ORIGINAL": "Original message: {content}",
       "ERRORS": {
         "generic": "Could not edit the message. Please try again.",
         "whatsapp_error": "WhatsApp did not accept the edit. Please try again.",
