@@ -1,0 +1,225 @@
+{
+  "name": "WhatsApp: mostrar edição do cliente no Chatwoot",
+  "nodes": [
+    {
+      "id": "c89b0932-4d42-5f73-b442-ffc2833ec4ba",
+      "name": "Evolution: mensagem recebida",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "ffbf248e-571b-5b99-aaae-53ec9d8a8fa6",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-edicao",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "915a4978-d575-58da-bdfe-6437b2e795e4",
+      "name": "É uma edição criptografada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0dfca7a5-b9df-5606-a00e-e9340b071ae8",
+              "leftValue": "={{ $json.body?.data?.message?.secretEncryptedMessage?.targetMessageKey?.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b2bfe796-0152-560c-a480-7245f6162fca",
+      "name": "Configuração",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        -100
+      ],
+      "notes": "Preencha estes 5 valores antes de ativar o fluxo.",
+      "notesInFlow": true,
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dee9fed2-4cf7-58e9-a09c-98dfd96f773a",
+              "name": "chatwootUrl",
+              "value": "https://chatwoot.pitchyes.com.br",
+              "type": "string"
+            },
+            {
+              "id": "de50c742-3341-5f85-9212-353438649208",
+              "name": "chatwootAccountId",
+              "value": "3",
+              "type": "string"
+            },
+            {
+              "id": "d06cc3a9-cac1-5413-a631-8abb1a74ec69",
+              "name": "chatwootToken",
+              "value": "COLE_AQUI_O_TOKEN_DE_ACESSO_DO_CHATWOOT",
+              "type": "string"
+            },
+            {
+              "id": "2a4495c4-315e-54d4-a529-88fd88f97b01",
+              "name": "evolutionUrl",
+              "value": "https://COLE_AQUI_A_URL_DA_EVOLUTION",
+              "type": "string"
+            },
+            {
+              "id": "f62028d2-f40e-5a8c-a411-ecaaee544956",
+              "name": "evolutionApiKey",
+              "value": "COLE_AQUI_A_APIKEY_DA_EVOLUTION",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "97d22dd8-2eb3-5a5a-b7c8-3edce0b1501d",
+      "name": "Buscar original na Evolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        -100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.evolutionUrl }}/chat/findMessages/{{ $json.body.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.evolutionApiKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ where: { key: { id: $json.body.data.message.secretEncryptedMessage.targetMessageKey.id } } }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "9e1287f4-1f92-5be3-92e7-55782a5f7c63",
+      "name": "Aplicar edição no Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        -100
+      ],
+      "notes": "Se o Chatwoot não tem a mensagem (404) ou recusa a edição (422), o fluxo termina sem erro.",
+      "notesInFlow": true,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').item.json.chatwootUrl }}/api/v1/accounts/{{ $('Configuração').item.json.chatwootAccountId }}/whatsapp_edits",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Configuração').item.json.chatwootToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ edit: $('Configuração').item.json.body.data, original: $json }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Evolution: mensagem recebida": {
+      "main": [
+        [
+          {
+            "node": "É uma edição criptografada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É uma edição criptografada?": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Configuração": {
+      "main": [
+        [
+          {
+            "node": "Buscar original na Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar original na Evolution": {
+      "main": [
+        [
+          {
+            "node": "Aplicar edição no Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false
+  },
+  "active": false,
+  "pinData": {}
+}

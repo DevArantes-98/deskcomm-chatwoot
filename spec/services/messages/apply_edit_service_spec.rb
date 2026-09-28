@@ -45,11 +45,12 @@ describe Messages::ApplyEditService do
   end
 
   it 'works for outgoing messages and keeps other content attributes' do
-    message.update!(message_type: :outgoing, content_attributes: { 'in_reply_to' => 5 })
+    replied_to = create(:message, account: account, inbox: inbox, conversation: conversation)
+    message.update!(message_type: :outgoing, content_attributes: { 'in_reply_to' => replied_to.id })
 
     apply('Reuniao as 11h')
 
-    expect(message.reload.content_attributes).to include('in_reply_to' => 5, 'edited' => true)
+    expect(message.reload.content_attributes).to include('in_reply_to' => replied_to.id, 'edited' => true)
   end
 
   it 'allows editing the caption of a message with an attachment' do
